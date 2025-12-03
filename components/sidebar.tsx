@@ -14,6 +14,8 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  Gavel,
+  FileBarChart,
 } from "lucide-react"
 import { create } from "zustand"
 
@@ -32,6 +34,8 @@ const navigation = [
   { name: "Inventory", href: "/inventory", icon: Package },
   { name: "Inventory Report", href: "/inventory-report", icon: FileText },
   { name: "Sales", href: "/sales", icon: ShoppingCart },
+  { name: "Private Sale", href: "/private-sale", icon: Gavel },
+  { name: "Private Sale Report", href: "/private-sale-report", icon: FileBarChart },
   { name: "Reports", href: "/reports", icon: BarChart3 },
   { name: "Settings", href: "/settings", icon: Settings },
 ]
