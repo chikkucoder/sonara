@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -14,6 +15,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { User, Store, Bell, Shield, Key, Save, Camera, Check } from "lucide-react"
 
 export default function SettingsPage() {
+  const router = useRouter()
+  const [clickCount, setClickCount] = useState(0)
+  const clickTimerRef = useRef<NodeJS.Timeout | null>(null)
+
   const [profileSaved, setProfileSaved] = useState(false)
   const [passwordChanged, setPasswordChanged] = useState(false)
   const [profile, setProfile] = useState({
@@ -42,6 +47,24 @@ export default function SettingsPage() {
     sms: false,
   })
 
+  const handleSecretClick = () => {
+    if (clickTimerRef.current) {
+      clearTimeout(clickTimerRef.current)
+    }
+
+    const newCount = clickCount + 1
+    setClickCount(newCount)
+
+    if (newCount >= 5) {
+      setClickCount(0)
+      router.push("/dashboard/private-zone")
+    } else {
+      clickTimerRef.current = setTimeout(() => {
+        setClickCount(0)
+      }, 2000) // Reset after 2 seconds of no clicks
+    }
+  }
+
   const handleProfileSave = () => {
     setProfileSaved(true)
     setTimeout(() => setProfileSaved(false), 3000)
@@ -66,7 +89,9 @@ export default function SettingsPage() {
       {/* MainLayout will handle Sidebar */}
       <main>
         <div className="p-8">
-          <DashboardHeader title="Settings" subtitle="Manage your account and store preferences" />
+          <div onClick={handleSecretClick} className="cursor-default select-none">
+            <DashboardHeader title="Settings" subtitle="Manage your account and store preferences" />
+          </div>
 
           <Tabs defaultValue="profile" className="space-y-6">
             <TabsList className="grid w-full max-w-2xl grid-cols-4">

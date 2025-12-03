@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
@@ -14,8 +14,6 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
-  Gavel,
-  FileBarChart,
 } from "lucide-react"
 import { create } from "zustand"
 
@@ -30,19 +28,22 @@ export const useSidebarStore = create<SidebarStore>((set) => ({
 }))
 
 const navigation = [
-  { name: "Dashboard", href: "/", icon: LayoutDashboard },
-  { name: "Inventory", href: "/inventory", icon: Package },
-  { name: "Inventory Report", href: "/inventory-report", icon: FileText },
-  { name: "Sales", href: "/sales", icon: ShoppingCart },
-  { name: "Private Sale", href: "/private-sale", icon: Gavel },
-  { name: "Private Sale Report", href: "/private-sale-report", icon: FileBarChart },
-  { name: "Reports", href: "/reports", icon: BarChart3 },
-  { name: "Settings", href: "/settings", icon: Settings },
+  { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { name: "Inventory", href: "/dashboard/inventory", icon: Package },
+  { name: "Inventory Report", href: "/dashboard/inventory-report", icon: FileText },
+  { name: "Sales", href: "/dashboard/sales", icon: ShoppingCart },
+  { name: "Reports", href: "/dashboard/reports", icon: BarChart3 },
+  { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { isExpanded, toggle } = useSidebarStore()
+
+  const handleLogout = () => {
+    router.push("/")
+  }
 
   return (
     <aside
@@ -80,7 +81,7 @@ export function Sidebar() {
         {/* Navigation */}
         <nav className={cn("flex-1 space-y-1 py-4 transition-all duration-300", isExpanded ? "px-3" : "px-2")}>
           {navigation.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathname === item.href || pathname.startsWith(item.href + "/")
             return (
               <Link
                 key={item.name}
@@ -119,6 +120,7 @@ export function Sidebar() {
               </div>
             )}
             <button
+              onClick={handleLogout}
               title="Logout"
               className={cn("rounded-lg hover:bg-sidebar-accent transition-colors", isExpanded ? "p-2" : "p-1.5")}
             >
