@@ -16,6 +16,8 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { create } from "zustand"
+import { createClient } from "@/lib/supabase/client"
+import { useState } from "react"
 
 interface SidebarStore {
   isExpanded: boolean
@@ -40,9 +42,20 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const { isExpanded, toggle } = useSidebarStore()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  const handleLogout = () => {
-    router.push("/")
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    try {
+      const supabase = createClient()
+      await supabase.auth.signOut()
+      router.push("/")
+      router.refresh()
+    } catch (error) {
+      console.error("Logout error:", error)
+    } finally {
+      setIsLoggingOut(false)
+    }
   }
 
   return (
@@ -121,8 +134,12 @@ export function Sidebar() {
             )}
             <button
               onClick={handleLogout}
+              disabled={isLoggingOut}
               title="Logout"
-              className={cn("rounded-lg hover:bg-sidebar-accent transition-colors", isExpanded ? "p-2" : "p-1.5")}
+              className={cn(
+                "rounded-lg hover:bg-sidebar-accent transition-colors disabled:opacity-50",
+                isExpanded ? "p-2" : "p-1.5",
+              )}
             >
               <LogOut className="h-4 w-4" />
             </button>

@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -9,10 +8,10 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Gem, Eye, EyeOff, ArrowLeft } from "lucide-react"
+import { Shield, Eye, EyeOff, ArrowLeft } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
-export default function LoginPage() {
+export default function SuperAdminLoginPage() {
   const router = useRouter()
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
@@ -30,6 +29,7 @@ export default function LoginPage() {
     try {
       const supabase = createClient()
 
+      // Sign in
       const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -37,27 +37,21 @@ export default function LoginPage() {
 
       if (signInError) throw signInError
 
-      // Check if user is enabled
+      // Check if user is super admin
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("enabled, role")
+        .select("role, enabled")
         .eq("id", authData.user.id)
         .single()
 
       if (profileError) throw profileError
 
-      if (profile.role === "super_admin") {
+      if (profile.role !== "super_admin") {
         await supabase.auth.signOut()
-        throw new Error("Please use super admin login page")
+        throw new Error("Access denied. Super admin credentials required.")
       }
 
-      if (!profile.enabled) {
-        await supabase.auth.signOut()
-        throw new Error("Your account has been disabled. Please contact administrator.")
-      }
-      // End of changes
-
-      router.push("/dashboard")
+      router.push("/super-admin/dashboard")
       router.refresh()
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to sign in")
@@ -67,65 +61,66 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4">
       {/* Background Pattern */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-red-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />
       </div>
 
       <div className="w-full max-w-md relative z-10">
         {/* Back to Home */}
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-8 transition-colors"
+          className="inline-flex items-center gap-2 text-slate-400 hover:text-slate-200 mb-8 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Back to Home
         </Link>
 
-        <Card className="border-border shadow-xl">
+        <Card className="border-slate-800 bg-slate-900/50 backdrop-blur shadow-xl">
           <CardHeader className="text-center pb-2">
-            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-              <Gem className="w-8 h-8 text-primary" />
+            <div className="mx-auto w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
+              <Shield className="w-8 h-8 text-red-500" />
             </div>
-            <CardTitle className="font-serif text-2xl">Welcome Back</CardTitle>
-            <CardDescription>Sign in to your JewelPro account</CardDescription>
+            <CardTitle className="font-serif text-2xl text-slate-100">Super Admin</CardTitle>
+            <CardDescription className="text-slate-400">Secure access to admin panel</CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="text-slate-200">
+                  Email
+                </Label>
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
+                  placeholder="admin@jewelpro.com"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
+                  className="bg-slate-800/50 border-slate-700 text-slate-100"
                 />
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <a href="#" className="text-sm text-primary hover:underline">
-                    Forgot password?
-                  </a>
-                </div>
+                <Label htmlFor="password" className="text-slate-200">
+                  Password
+                </Label>
                 <div className="relative">
                   <Input
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, password: e.password })}
                     required
+                    className="bg-slate-800/50 border-slate-700 text-slate-100"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200"
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
@@ -133,22 +128,15 @@ export default function LoginPage() {
               </div>
 
               {error && (
-                <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+                <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                   {error}
                 </div>
               )}
 
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign In"}
+              <Button type="submit" className="w-full bg-red-600 hover:bg-red-700 text-white" disabled={isLoading}>
+                {isLoading ? "Signing in..." : "Sign In as Super Admin"}
               </Button>
             </form>
-
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
-              <Link href="/signup" className="text-primary hover:underline font-medium">
-                Create account
-              </Link>
-            </div>
           </CardContent>
         </Card>
       </div>
