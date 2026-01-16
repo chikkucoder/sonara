@@ -1,32 +1,51 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { UserManagement } from "@/components/super-admin/user-management"
 import { Shield } from "lucide-react"
+import dbConnect from "@/lib/mongodb"
+import User from "@/lib/models/User"
+import Shop from "@/lib/models/Shop"
 
 async function getSuperAdminData() {
-  const supabase = await createClient()
+  const session = await getServerSession(authOptions)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
+  if (!session || !session.user) {
     redirect("/super-admin/login")
   }
 
   // Check if user is super admin
-  const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-  if (!profile || profile.role !== "super_admin") {
+  if ((session.user as any).role !== "super_admin") {
     redirect("/super-admin/login")
   }
 
+  await dbConnect()
+
   // Fetch all users
-  const { data: users } = await supabase.from("profiles").select("*").order("created_at", { ascending: false })
+  const users = await User.find({}).select("-password").sort({ created_at: -1 }).lean()
+
+  // Fetch shop details for each user
+  const usersWithShops = await Promise.all(
+    users.map(async (user) => {
+      const shop = await Shop.findOne({ user_id: user._id.toString() }).lean()
+      return {
+        id: user._id.toString(),
+        email: user.email,
+        full_name: user.full_name,
+        role: user.role,
+        enabled: user.enabled,
+        shop_name: shop?.shop_name || null,
+        shop_address: shop?.shop_address || null,
+        shop_phone: shop?.shop_phone || null,
+        shop_gst: shop?.shop_gst || null,
+        created_at: user.created_at?.toString() || new Date().toString(),
+      }
+    })
+  )
 
   return {
-    user,
-    users: users || [],
+    user: session.user,
+    users: usersWithShops,
   }
 }
 

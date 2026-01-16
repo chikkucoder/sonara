@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { signOut } from "next-auth/react"
 import { cn } from "@/lib/utils"
 import {
   LayoutDashboard,
@@ -16,7 +17,6 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { create } from "zustand"
-import { createClient } from "@/lib/supabase/client"
 import { useState } from "react"
 
 interface SidebarStore {
@@ -47,8 +47,7 @@ export function Sidebar() {
   const handleLogout = async () => {
     setIsLoggingOut(true)
     try {
-      const supabase = createClient()
-      await supabase.auth.signOut()
+      await signOut({ redirect: false })
       router.push("/")
       router.refresh()
     } catch (error) {

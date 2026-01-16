@@ -1,0 +1,27 @@
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+
+export async function getSession() {
+  return await getServerSession(authOptions)
+}
+
+export async function getCurrentUser() {
+  const session = await getSession()
+  return session?.user
+}
+
+export async function requireAuth() {
+  const user = await getCurrentUser()
+  if (!user) {
+    throw new Error("Unauthorized")
+  }
+  return user
+}
+
+export async function requireSuperAdmin() {
+  const user = await requireAuth()
+  if ((user as any).role !== "super_admin") {
+    throw new Error("Access denied. Super admin required.")
+  }
+  return user
+}

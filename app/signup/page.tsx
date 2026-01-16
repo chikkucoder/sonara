@@ -10,7 +10,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Gem, Eye, EyeOff, ArrowLeft } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 
 export default function SignupPage() {
   const router = useRouter()
@@ -43,19 +42,23 @@ export default function SignupPage() {
     }
 
     try {
-      const supabase = createClient()
-      const { error: signUpError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/dashboard`,
-          data: {
-            full_name: formData.fullName,
-          },
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          full_name: formData.fullName,
+        }),
       })
 
-      if (signUpError) throw signUpError
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to sign up")
+      }
 
       setSuccess(true)
     } catch (err) {
@@ -79,9 +82,9 @@ export default function SignupPage() {
               <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
                 <Gem className="w-8 h-8 text-primary" />
               </div>
-              <CardTitle className="font-serif text-2xl">Check Your Email</CardTitle>
+              <CardTitle className="font-serif text-2xl">Account Created!</CardTitle>
               <CardDescription>
-                We've sent you a confirmation email. Please check your inbox and click the link to verify your account.
+                Your account has been created successfully. You can now login.
               </CardDescription>
             </CardHeader>
             <CardContent>

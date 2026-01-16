@@ -1,63 +1,65 @@
 import { redirect } from "next/navigation"
-import { createClient } from "@/lib/supabase/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { StatsCard } from "@/components/stats-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { IndianRupee, Package, ShoppingCart, TrendingUp, ArrowUpRight, ArrowDownRight } from "lucide-react"
+import dbConnect from "@/lib/mongodb"
+import User from "@/lib/models/User"
+import Sale from "@/lib/models/Sale"
+import Inventory from "@/lib/models/Inventory"
 
 async function getDashboardData() {
-  const supabase = await createClient()
+  const session = await getServerSession(authOptions)
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
+  if (!session || !session.user) {
     redirect("/login")
   }
 
+  const userId = (session.user as any).id
+
+  await dbConnect()
+
   // Fetch profile
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+  const profile = await User.findById(userId).select("-password")
+
+  // Get today's date range
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
 
   // Fetch today's sales
-  const today = new Date().toISOString().split("T")[0]
-  const { data: todaySales } = await supabase.from("sales").select("*").eq("user_id", user.id).eq("sale_date", today)
+  const todaySales = await Sale.find({
+    user_id: userId,
+    sale_date: { $gte: today, $lt: tomorrow },
+  }).lean()
 
   // Fetch total inventory count
-  const { count: inventoryCount } = await supabase
-    .from("inventory_normal")
-    .select("*", { count: "exact", head: true })
-    .eq("user_id", user.id)
+  const inventoryCount = await Inventory.countDocuments({ user_id: userId })
 
   // Fetch recent sales (last 5)
-  const { data: recentSales } = await supabase
-    .from("sales")
-    .select("*")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false })
-    .limit(5)
+  const recentSales = await Sale.find({ user_id: userId }).sort({ created_at: -1 }).limit(5).lean()
 
   // Fetch low stock items
-  const { data: lowStock } = await supabase
-    .from("inventory_normal")
-    .select("*")
-    .eq("user_id", user.id)
-    .lte("quantity", 10)
-    .order("quantity", { ascending: true })
+  const lowStock = await Inventory.find({ user_id: userId, quantity: { $lte: 10 } })
+    .sort({ quantity: 1 })
     .limit(5)
+    .lean()
 
   // Calculate today's sales total
-  const todayTotal = todaySales?.reduce((sum, sale) => sum + Number(sale.total_amount), 0) || 0
+  const todayTotal = todaySales.reduce((sum, sale) => sum + Number(sale.total_amount), 0)
 
   return {
-    user,
+    user: session.user,
     profile,
     todayTotal,
-    inventoryCount: inventoryCount || 0,
-    todaySalesCount: todaySales?.length || 0,
-    recentSales: recentSales || [],
-    lowStock: lowStock || [],
+    inventoryCount,
+    todaySalesCount: todaySales.length,
+    recentSales,
+    lowStock,
   }
 }
 

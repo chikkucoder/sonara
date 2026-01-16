@@ -4,12 +4,12 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Shield, Eye, EyeOff, ArrowLeft } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 
 export default function SuperAdminLoginPage() {
   const router = useRouter()
@@ -27,27 +27,22 @@ export default function SuperAdminLoginPage() {
     setError(null)
 
     try {
-      const supabase = createClient()
-
-      // Sign in
-      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+      const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
+        redirect: false,
       })
 
-      if (signInError) throw signInError
+      if (result?.error) {
+        throw new Error(result.error)
+      }
 
-      // Check if user is super admin
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("role, enabled")
-        .eq("id", authData.user.id)
-        .single()
+      // Verify super admin role
+      const response = await fetch("/api/auth/session")
+      const session = await response.json()
 
-      if (profileError) throw profileError
-
-      if (profile.role !== "super_admin") {
-        await supabase.auth.signOut()
+      if (session?.user?.role !== "super_admin") {
+        await signIn("credentials", { redirect: false }) // Sign out
         throw new Error("Access denied. Super admin credentials required.")
       }
 
@@ -113,7 +108,7 @@ export default function SuperAdminLoginPage() {
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.password })}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     required
                     className="bg-slate-800/50 border-slate-700 text-slate-100"
                   />

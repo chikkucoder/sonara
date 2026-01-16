@@ -5,12 +5,12 @@ import type React from "react"
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Gem, Eye, EyeOff, ArrowLeft } from "lucide-react"
-import { createClient } from "@/lib/supabase/client"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -28,34 +28,15 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      const supabase = createClient()
-
-      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+      const result = await signIn("credentials", {
         email: formData.email,
         password: formData.password,
+        redirect: false,
       })
 
-      if (signInError) throw signInError
-
-      // Check if user is enabled
-      const { data: profile, error: profileError } = await supabase
-        .from("profiles")
-        .select("enabled, role")
-        .eq("id", authData.user.id)
-        .single()
-
-      if (profileError) throw profileError
-
-      if (profile.role === "super_admin") {
-        await supabase.auth.signOut()
-        throw new Error("Please use super admin login page")
+      if (result?.error) {
+        throw new Error(result.error)
       }
-
-      if (!profile.enabled) {
-        await supabase.auth.signOut()
-        throw new Error("Your account has been disabled. Please contact administrator.")
-      }
-      // End of changes
 
       router.push("/dashboard")
       router.refresh()

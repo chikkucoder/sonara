@@ -1,25 +1,45 @@
-import { createClient } from "@/lib/supabase/server"
+import { requireSuperAdmin } from "@/lib/auth"
+import dbConnect from "@/lib/mongodb"
+import User from "@/lib/models/User"
+import Shop from "@/lib/models/Shop"
 import { NextResponse } from "next/server"
+
+export async function GET() {
+  try {
+    await requireSuperAdmin()
+    await dbConnect()
+
+    // Fetch all users with their shop details
+    const users = await User.find({}).select("-password").sort({ created_at: -1 }).lean()
+
+    // Fetch shop details for each user
+    const usersWithShops = await Promise.all(
+      users.map(async (user) => {
+        const shop = await Shop.findOne({ user_id: user._id.toString() }).lean()
+        return {
+          ...user,
+          shop_name: shop?.shop_name || null,
+          shop_address: shop?.shop_address || null,
+          shop_phone: shop?.shop_phone || null,
+          shop_gst: shop?.shop_gst || null,
+        }
+      })
+    )
+
+    return NextResponse.json({ users: usersWithShops })
+  } catch (error) {
+    console.error("Fetch users error:", error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to fetch users" },
+      { status: 500 }
+    )
+  }
+}
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-
-    // Check if requester is super admin
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { data: adminProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-    if (!adminProfile || adminProfile.role !== "super_admin") {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 })
-    }
+    await requireSuperAdmin()
+    await dbConnect()
 
     // Get form data
     const body = await request.json()
@@ -30,65 +50,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Create user in Supabase Auth using admin API
-    const { data: newUser, error: createError } = await supabase.auth.admin.createUser({
-      email,
+    // Check if user already exists
+    const existingUser = await User.findOne({ email: email.toLowerCase() })
+    if (existingUser) {
+      return NextResponse.json({ error: "User with this email already exists" }, { status: 400 })
+    }
+
+    // Create new user in MongoDB
+    const newUser = await User.create({
+      email: email.toLowerCase(),
       password,
-      email_confirm: true,
+      full_name,
+      role: "user",
+      enabled: true,
+      shop_id: shop_name,
     })
 
-    if (createError) throw createError
-
-    // Update profile with shop details
-    const { error: profileError } = await supabase
-      .from("profiles")
-      .update({
-        full_name,
-        shop_name,
-        shop_address,
-        shop_phone,
-        shop_gst: shop_gst || null,
-        role: "user",
-        enabled: true,
-        created_by: user.id,
-      })
-      .eq("id", newUser.user.id)
-
-    if (profileError) throw profileError
+    // Create shop details
+    await Shop.create({
+      user_id: newUser._id.toString(),
+      shop_name,
+      shop_address,
+      shop_phone,
+      shop_gst: shop_gst || null,
+    })
 
     return NextResponse.json({
       success: true,
-      user: newUser.user,
+      user: {
+        id: newUser._id,
+        email: newUser.email,
+        full_name: newUser.full_name,
+      },
       credentials: { email, password },
     })
   } catch (error) {
-    console.error("[v0] Super admin create user error:", error)
+    console.error("Create user error:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to create user" },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }
 
 export async function PUT(request: Request) {
   try {
-    const supabase = await createClient()
-
-    // Check if requester is super admin
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-
-    if (authError || !user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    const { data: adminProfile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
-
-    if (!adminProfile || adminProfile.role !== "super_admin") {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 })
-    }
+    await requireSuperAdmin()
+    await dbConnect()
 
     // Get update data
     const body = await request.json()
@@ -98,17 +106,19 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 })
     }
 
-    // Update user enabled status
-    const { error: updateError } = await supabase.from("profiles").update({ enabled }).eq("id", userId)
+    // Update user status
+    const updatedUser = await User.findByIdAndUpdate(userId, { enabled }, { new: true }).select("-password")
 
-    if (updateError) throw updateError
+    if (!updatedUser) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json({ success: true, user: updatedUser })
   } catch (error) {
-    console.error("[v0] Super admin update user error:", error)
+    console.error("Update user error:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update user" },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }
