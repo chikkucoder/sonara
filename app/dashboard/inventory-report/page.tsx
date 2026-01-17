@@ -177,7 +177,7 @@ export default function InventoryReportPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Items Added</p>
-              <p className="text-2xl font-bold text-green-600">+{summary.totalAdded}</p>
+              <p className="text-2xl font-bold">+{summary.totalAdded}</p>
             </div>
           </CardContent>
         </Card>
@@ -188,7 +188,7 @@ export default function InventoryReportPage() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Items Sold</p>
-              <p className="text-2xl font-bold text-red-600">-{summary.totalSold}</p>
+              <p className="text-2xl font-bold">-{summary.totalSold}</p>
             </div>
           </CardContent>
         </Card>

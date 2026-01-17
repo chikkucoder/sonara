@@ -10,6 +10,49 @@ import dbConnect from "@/lib/mongodb"
 import User from "@/lib/models/User"
 import Sale from "@/lib/models/Sale"
 import Inventory from "@/lib/models/Inventory"
+import { unstable_cache } from "next/cache"
+
+// Cache dashboard data for 60 seconds
+const getCachedDashboardData = unstable_cache(
+  async (userId: string) => {
+    await dbConnect()
+
+    // Get today's date range
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    // Run queries in parallel for better performance
+    const [profile, todaySales, inventoryCount, recentSales, lowStock] = await Promise.all([
+      User.findById(userId).select("-password").lean(),
+      Sale.find({
+        user_id: userId,
+        sale_date: { $gte: today, $lt: tomorrow },
+      }).lean(),
+      Inventory.countDocuments({ user_id: userId }),
+      Sale.find({ user_id: userId }).sort({ created_at: -1 }).limit(5).lean(),
+      Inventory.find({ user_id: userId, quantity: { $lte: 10 } })
+        .sort({ quantity: 1 })
+        .limit(5)
+        .lean(),
+    ])
+
+    // Calculate today's sales total
+    const todayTotal = todaySales.reduce((sum, sale) => sum + Number(sale.total_amount), 0)
+
+    return {
+      profile,
+      todayTotal,
+      inventoryCount,
+      todaySalesCount: todaySales.length,
+      recentSales,
+      lowStock,
+    }
+  },
+  ['dashboard-data'],
+  { revalidate: 60, tags: ['dashboard'] }
+)
 
 async function getDashboardData() {
   const session = await getServerSession(authOptions)
@@ -19,47 +62,11 @@ async function getDashboardData() {
   }
 
   const userId = (session.user as any).id
-
-  await dbConnect()
-
-  // Fetch profile
-  const profile = await User.findById(userId).select("-password")
-
-  // Get today's date range
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const tomorrow = new Date(today)
-  tomorrow.setDate(tomorrow.getDate() + 1)
-
-  // Fetch today's sales
-  const todaySales = await Sale.find({
-    user_id: userId,
-    sale_date: { $gte: today, $lt: tomorrow },
-  }).lean()
-
-  // Fetch total inventory count
-  const inventoryCount = await Inventory.countDocuments({ user_id: userId })
-
-  // Fetch recent sales (last 5)
-  const recentSales = await Sale.find({ user_id: userId }).sort({ created_at: -1 }).limit(5).lean()
-
-  // Fetch low stock items
-  const lowStock = await Inventory.find({ user_id: userId, quantity: { $lte: 10 } })
-    .sort({ quantity: 1 })
-    .limit(5)
-    .lean()
-
-  // Calculate today's sales total
-  const todayTotal = todaySales.reduce((sum, sale) => sum + Number(sale.total_amount), 0)
+  const data = await getCachedDashboardData(userId)
 
   return {
     user: session.user,
-    profile,
-    todayTotal,
-    inventoryCount,
-    todaySalesCount: todaySales.length,
-    recentSales,
-    lowStock,
+    ...data,
   }
 }
 
@@ -161,7 +168,7 @@ export default async function DashboardPage() {
               <div className="space-y-4">
                 {data.lowStock.map((item) => (
                   <div
-                    key={item.id}
+                    key={item._id || item.id}
                     className="flex items-center justify-between p-3 rounded-lg border border-destructive/20 bg-destructive/5"
                   >
                     <div className="flex items-center gap-3">

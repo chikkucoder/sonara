@@ -6,14 +6,16 @@ import { Sidebar, useSidebarStore } from "@/components/sidebar"
 import { cn } from "@/lib/utils"
 
 const publicRoutes = ["/", "/login"]
+const superAdminRoutes = ["/super-admin"]
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
   const { isExpanded } = useSidebarStore()
 
   const isPublicRoute = publicRoutes.includes(pathname)
+  const isSuperAdminRoute = pathname.startsWith("/super-admin")
 
-  if (isPublicRoute) {
+  if (isPublicRoute || isSuperAdminRoute) {
     return <>{children}</>
   }
 

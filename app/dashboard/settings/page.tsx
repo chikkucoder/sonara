@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -20,6 +20,7 @@ export default function SettingsPage() {
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   const [profileSaved, setProfileSaved] = useState(false)
+  const [storeSaved, setStoreSaved] = useState(false)
   const [passwordChanged, setPasswordChanged] = useState(false)
   const [profile, setProfile] = useState({
     name: "Rajesh Kumar",
@@ -47,6 +48,27 @@ export default function SettingsPage() {
     sms: false,
   })
 
+  useEffect(() => {
+    fetchSettings()
+  }, [])
+
+  const fetchSettings = async () => {
+    try {
+      const response = await fetch("/api/settings")
+      if (response.ok) {
+        const data = await response.json()
+        if (data.profile) {
+          setProfile({ ...profile, ...data.profile })
+        }
+        if (data.store) {
+          setStore({ ...store, ...data.store })
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load settings:", error)
+    }
+  }
+
   const handleSecretClick = () => {
     if (clickTimerRef.current) {
       clearTimeout(clickTimerRef.current)
@@ -65,12 +87,47 @@ export default function SettingsPage() {
     }
   }
 
-  const handleProfileSave = () => {
-    setProfileSaved(true)
-    setTimeout(() => setProfileSaved(false), 3000)
+  const handleProfileSave = async () => {
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profile }),
+      })
+
+      if (response.ok) {
+        setProfileSaved(true)
+        setTimeout(() => setProfileSaved(false), 3000)
+      } else {
+        alert("Failed to save profile")
+      }
+    } catch (error) {
+      console.error("Failed to save profile:", error)
+      alert("Failed to save profile")
+    }
   }
 
-  const handlePasswordChange = () => {
+  const handleStoreSave = async () => {
+    try {
+      const response = await fetch("/api/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ store }),
+      })
+
+      if (response.ok) {
+        setStoreSaved(true)
+        setTimeout(() => setStoreSaved(false), 3000)
+      } else {
+        alert("Failed to save store settings")
+      }
+    } catch (error) {
+      console.error("Failed to save store settings:", error)
+      alert("Failed to save store settings")
+    }
+  }
+
+  const handlePasswordChange = async () => {
     if (passwords.new !== passwords.confirm) {
       alert("New passwords do not match!")
       return
@@ -79,9 +136,34 @@ export default function SettingsPage() {
       alert("Password must be at least 8 characters!")
       return
     }
-    setPasswordChanged(true)
-    setPasswords({ current: "", new: "", confirm: "" })
-    setTimeout(() => setPasswordChanged(false), 3000)
+    
+    try {
+      const response = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          currentPassword: passwords.current,
+          newPassword: passwords.new,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || "Failed to change password")
+        return
+      }
+
+      setPasswordChanged(true)
+      setPasswords({ current: "", new: "", confirm: "" })
+      alert("Password changed successfully!")
+      setTimeout(() => setPasswordChanged(false), 3000)
+    } catch (error) {
+      console.error("Password change error:", error)
+      alert("Failed to change password. Please try again.")
+    }
   }
 
   return (
@@ -250,9 +332,18 @@ export default function SettingsPage() {
                     </div>
                   </div>
 
-                  <Button className="w-full md:w-auto">
-                    <Save className="h-4 w-4 mr-2" />
-                    Save Store Settings
+                  <Button onClick={handleStoreSave} className="w-full md:w-auto">
+                    {storeSaved ? (
+                      <>
+                        <Check className="h-4 w-4 mr-2" />
+                        Saved Successfully!
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Store Settings
+                      </>
+                    )}
                   </Button>
                 </CardContent>
               </Card>

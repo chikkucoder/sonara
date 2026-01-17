@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,8 @@ import {
   Calendar,
   Percent,
   Gavel,
+  FileDown,
+  BarChart3,
 } from "lucide-react"
 
 interface InventoryItem {
@@ -42,6 +44,7 @@ interface InventoryItem {
 
 interface GirviItem {
   id: number
+  _id?: string
   customerName: string
   customerPhone: string
   customerAddress: string
@@ -59,215 +62,17 @@ interface GirviItem {
   description: string
 }
 
-const initialInventory: InventoryItem[] = [
-  {
-    id: 1,
-    name: "Gold Necklace Set",
-    category: "Necklace",
-    weight: "45g",
-    purity: "22K",
-    quantity: 12,
-    costPrice: 225000,
-    sellingPrice: 270000,
-    status: "in-stock",
-    inventoryDate: "2024-12-01",
-  },
-  {
-    id: 2,
-    name: "Diamond Ring",
-    category: "Ring",
-    weight: "8g",
-    purity: "18K",
-    quantity: 5,
-    costPrice: 85000,
-    sellingPrice: 110000,
-    status: "low-stock",
-    inventoryDate: "2024-12-01",
-  },
-  {
-    id: 3,
-    name: "Gold Bangles (Pair)",
-    category: "Bangles",
-    weight: "32g",
-    purity: "22K",
-    quantity: 25,
-    costPrice: 160000,
-    sellingPrice: 195000,
-    status: "in-stock",
-    inventoryDate: "2024-12-02",
-  },
-  {
-    id: 4,
-    name: "Silver Anklet Set",
-    category: "Anklet",
-    weight: "28g",
-    purity: "925",
-    quantity: 0,
-    costPrice: 8400,
-    sellingPrice: 12500,
-    status: "out-of-stock",
-    inventoryDate: "2024-11-30",
-  },
-  {
-    id: 5,
-    name: "Gold Earrings",
-    category: "Earrings",
-    weight: "12g",
-    purity: "22K",
-    quantity: 18,
-    costPrice: 60000,
-    sellingPrice: 75000,
-    status: "in-stock",
-    inventoryDate: "2024-12-02",
-  },
-  {
-    id: 6,
-    name: "Diamond Pendant",
-    category: "Pendant",
-    weight: "5g",
-    purity: "18K",
-    quantity: 3,
-    costPrice: 125000,
-    sellingPrice: 165000,
-    status: "low-stock",
-    inventoryDate: "2024-12-01",
-  },
-  {
-    id: 7,
-    name: "Gold Chain 22K",
-    category: "Chain",
-    weight: "25g",
-    purity: "22K",
-    quantity: 8,
-    costPrice: 125000,
-    sellingPrice: 150000,
-    status: "in-stock",
-    inventoryDate: "2024-11-29",
-  },
-  {
-    id: 8,
-    name: "Silver Ring Set",
-    category: "Ring",
-    weight: "15g",
-    purity: "925",
-    quantity: 30,
-    costPrice: 4500,
-    sellingPrice: 7500,
-    status: "in-stock",
-    inventoryDate: "2024-12-02",
-  },
-]
+interface PurchaseItem {
+  supplier_name: string
+  item_name: string
+  category: string
+  purity: string
+  purchase_date: string
+}
 
-const initialGirviItems: GirviItem[] = [
-  {
-    id: 1,
-    customerName: "Ramesh Kumar",
-    customerPhone: "9876543210",
-    customerAddress: "123, Gandhi Nagar, Delhi",
-    aadharNo: "1234-5678-9012",
-    itemName: "Gold Necklace",
-    itemType: "Necklace",
-    metalType: "gold",
-    weight: "50g",
-    purity: "22K",
-    loanAmount: 200000,
-    interestRate: 2,
-    girviDate: "2024-10-15",
-    dueDate: "2025-04-15",
-    status: "active",
-    description: "Heavy bridal necklace with kundan work",
-  },
-  {
-    id: 2,
-    customerName: "Sunita Devi",
-    customerPhone: "9876543211",
-    customerAddress: "45, Shanti Nagar, Mumbai",
-    aadharNo: "2345-6789-0123",
-    itemName: "Gold Bangles (4 pcs)",
-    itemType: "Bangles",
-    metalType: "gold",
-    weight: "80g",
-    purity: "22K",
-    loanAmount: 320000,
-    interestRate: 2.5,
-    girviDate: "2024-11-01",
-    dueDate: "2025-05-01",
-    status: "active",
-    description: "Set of 4 traditional bangles",
-  },
-  {
-    id: 3,
-    customerName: "Amit Sharma",
-    customerPhone: "9876543212",
-    customerAddress: "78, Rajendra Nagar, Jaipur",
-    aadharNo: "3456-7890-1234",
-    itemName: "Silver Utensils Set",
-    itemType: "Utensils",
-    metalType: "silver",
-    weight: "500g",
-    purity: "925",
-    loanAmount: 25000,
-    interestRate: 1.5,
-    girviDate: "2024-09-20",
-    dueDate: "2025-03-20",
-    status: "redeemed",
-    description: "Silver thali, glass and bowl set",
-  },
-  {
-    id: 4,
-    customerName: "Priya Gupta",
-    customerPhone: "9876543213",
-    customerAddress: "90, MG Road, Bangalore",
-    aadharNo: "4567-8901-2345",
-    itemName: "Diamond Earrings",
-    itemType: "Earrings",
-    metalType: "gold",
-    weight: "15g",
-    purity: "18K",
-    loanAmount: 150000,
-    interestRate: 2,
-    girviDate: "2024-11-15",
-    dueDate: "2025-05-15",
-    status: "active",
-    description: "Diamond studded jhumka earrings",
-  },
-  {
-    id: 5,
-    customerName: "Vijay Verma",
-    customerPhone: "9876543214",
-    customerAddress: "12, Civil Lines, Lucknow",
-    aadharNo: "5678-9012-3456",
-    itemName: "Gold Chain Heavy",
-    itemType: "Chain",
-    metalType: "gold",
-    weight: "100g",
-    purity: "22K",
-    loanAmount: 400000,
-    interestRate: 2,
-    girviDate: "2024-06-01",
-    dueDate: "2024-12-01",
-    status: "auctioned",
-    description: "Heavy gold chain - due date passed, forfeited",
-  },
-  {
-    id: 6,
-    customerName: "Meena Kumari",
-    customerPhone: "9876543215",
-    customerAddress: "34, Ashok Nagar, Chennai",
-    aadharNo: "6789-0123-4567",
-    itemName: "Gold Anklets",
-    itemType: "Anklet",
-    metalType: "gold",
-    weight: "40g",
-    purity: "22K",
-    loanAmount: 160000,
-    interestRate: 2.5,
-    girviDate: "2024-05-15",
-    dueDate: "2024-11-15",
-    status: "auctioned",
-    description: "Traditional gold anklets - auctioned",
-  },
-]
+
+
+
 
 const categories = ["All", "Necklace", "Ring", "Bangles", "Earrings", "Chain", "Pendant", "Anklet"]
 const girviCategories = [
@@ -285,23 +90,98 @@ const girviCategories = [
 
 export default function InventoryPage() {
   const [activeTab, setActiveTab] = useState("normal")
-  const [inventory, setInventory] = useState<InventoryItem[]>(initialInventory)
-  const [girviItems, setGirviItems] = useState<GirviItem[]>(initialGirviItems)
+  const [inventory, setInventory] = useState<InventoryItem[]>([])
+  const [girviItems, setGirviItems] = useState<GirviItem[]>([])
+  const [purchases, setPurchases] = useState<PurchaseItem[]>([])
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState("All")
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false)
   const [isAddGirviOpen, setIsAddGirviOpen] = useState(false)
+  const [isInventoryReportOpen, setIsInventoryReportOpen] = useState(false)
+  const [reportDateFrom, setReportDateFrom] = useState("")
+  const [reportDateTo, setReportDateTo] = useState(new Date().toISOString().split("T")[0])
+  const [reportCategory, setReportCategory] = useState("All")
 
-  const [newItem, setNewItem] = useState({
-    name: "",
-    category: "Necklace",
-    weight: "",
-    purity: "22K",
-    quantity: 0,
-    costPrice: 0,
-    sellingPrice: 0,
-    inventoryDate: new Date().toISOString().split("T")[0],
-  })
+  // Fetch inventory from MongoDB
+  const fetchInventory = async () => {
+    try {
+      const response = await fetch("/api/inventory/normal")
+      const data = await response.json()
+      if (response.ok) {
+        // Transform MongoDB data to match component interface
+        const transformedData = (data.data || []).map((item: any, index: number) => ({
+          id: index + 1,
+          name: item.item_name || "",
+          category: item.category || "",
+          weight: item.weight ? `${item.weight}g` : "",
+          purity: item.purity || "",
+          quantity: item.quantity || 0,
+          costPrice: item.rate || 0,
+          sellingPrice: item.total_value || 0,
+          status: item.quantity === 0 ? "out-of-stock" : item.quantity < 5 ? "low-stock" : "in-stock",
+          inventoryDate: item.inventory_date 
+            ? new Date(item.inventory_date).toISOString().split("T")[0] 
+            : item.created_at 
+            ? new Date(item.created_at).toISOString().split("T")[0]
+            : new Date().toISOString().split("T")[0],
+        }))
+        setInventory(transformedData)
+      }
+    } catch (error) {
+      console.error("Fetch inventory error:", error)
+    }
+  }
+
+  // Fetch girvi from MongoDB
+  const fetchGirvi = async () => {
+    try {
+      const response = await fetch("/api/inventory/girvi")
+      const data = await response.json()
+      if (response.ok) {
+        // Transform MongoDB data to match component interface
+        const transformedData = (data.data || []).map((item: any, index: number) => ({
+          id: index + 1,
+          _id: item._id,
+          customerName: item.customer_name || "",
+          customerPhone: item.customer_phone || "",
+          customerAddress: item.customer_address || "",
+          aadharNo: item.aadhar_no || "",
+          itemName: item.item_name || "",
+          itemType: item.item_type || "",
+          metalType: item.metal_type || "gold",
+          weight: item.weight ? `${item.weight}g` : "",
+          purity: item.purity || "",
+          loanAmount: item.loan_amount || 0,
+          interestRate: item.interest_rate || 2,
+          girviDate: item.girvi_date ? new Date(item.girvi_date).toISOString().split("T")[0] : "",
+          dueDate: item.due_date ? new Date(item.due_date).toISOString().split("T")[0] : "",
+          status: item.status || "active",
+          description: item.description || "",
+        }))
+        setGirviItems(transformedData)
+      }
+    } catch (error) {
+      console.error("Fetch girvi error:", error)
+    }
+  }
+
+  // Fetch purchases from MongoDB
+  const fetchPurchases = async () => {
+    try {
+      const response = await fetch("/api/purchase")
+      const data = await response.json()
+      if (response.ok) {
+        setPurchases(data.data || [])
+      }
+    } catch (error) {
+      console.error("Fetch purchases error:", error)
+    }
+  }
+
+  useEffect(() => {
+    fetchInventory()
+    fetchGirvi()
+    fetchPurchases()
+  }, [])
 
   const [newGirvi, setNewGirvi] = useState({
     customerName: "",
@@ -334,67 +214,145 @@ export default function InventoryPage() {
     return matchesSearch && matchesCategory
   })
 
-  const handleAddItem = () => {
-    const status = newItem.quantity === 0 ? "out-of-stock" : newItem.quantity < 5 ? "low-stock" : "in-stock"
-    const item: InventoryItem = {
-      id: inventory.length + 1,
-      ...newItem,
-      status,
-    }
-    setInventory([...inventory, item])
-    setIsAddDialogOpen(false)
-    setNewItem({
-      name: "",
-      category: "Necklace",
-      weight: "",
-      purity: "22K",
-      quantity: 0,
-      costPrice: 0,
-      sellingPrice: 0,
-      inventoryDate: new Date().toISOString().split("T")[0],
-    })
-  }
+  const handleAddGirvi = async () => {
+    try {
+      const response = await fetch("/api/inventory/girvi", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customer_name: newGirvi.customerName,
+          customer_phone: newGirvi.customerPhone,
+          customer_address: newGirvi.customerAddress,
+          aadhar_no: newGirvi.aadharNo,
+          item_name: newGirvi.itemName,
+          item_type: newGirvi.itemType,
+          metal_type: newGirvi.metalType,
+          weight: parseFloat(newGirvi.weight) || 0,
+          purity: newGirvi.purity,
+          loan_amount: newGirvi.loanAmount,
+          interest_rate: newGirvi.interestRate,
+          girvi_date: newGirvi.girviDate,
+          due_date: newGirvi.dueDate,
+          description: newGirvi.description,
+          status: "active",
+        }),
+      })
 
-  const handleAddGirvi = () => {
-    const item: GirviItem = {
-      id: girviItems.length + 1,
-      ...newGirvi,
-      status: "active",
+      const data = await response.json()
+
+      if (!response.ok) {
+        alert(data.error || "Failed to add girvi item")
+        return
+      }
+
+      alert("Girvi item added successfully!")
+      setIsAddGirviOpen(false)
+      setNewGirvi({
+        customerName: "",
+        customerPhone: "",
+        customerAddress: "",
+        aadharNo: "",
+        itemName: "",
+        itemType: "Necklace",
+        metalType: "gold",
+        weight: "",
+        purity: "22K",
+        loanAmount: 0,
+        interestRate: 2,
+        girviDate: new Date().toISOString().split("T")[0],
+        dueDate: "",
+        description: "",
+      })
+      // Refresh girvi list
+      fetchGirvi()
+    } catch (error) {
+      console.error("Add girvi error:", error)
+      alert("Failed to add girvi item. Please try again.")
     }
-    setGirviItems([...girviItems, item])
-    setIsAddGirviOpen(false)
-    setNewGirvi({
-      customerName: "",
-      customerPhone: "",
-      customerAddress: "",
-      aadharNo: "",
-      itemName: "",
-      itemType: "Necklace",
-      metalType: "gold",
-      weight: "",
-      purity: "22K",
-      loanAmount: 0,
-      interestRate: 2,
-      girviDate: new Date().toISOString().split("T")[0],
-      dueDate: "",
-      description: "",
-    })
   }
 
   const handleDeleteItem = (id: number) => {
     setInventory(inventory.filter((item) => item.id !== id))
   }
 
-  const handleDeleteGirvi = (id: number) => {
-    setGirviItems(girviItems.filter((item) => item.id !== id))
+  const handleDeleteGirvi = async (id: number) => {
+    const item = girviItems.find((i) => i.id === id)
+    if (!item?._id) return
+
+    try {
+      const response = await fetch("/api/inventory/girvi", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: item._id }),
+      })
+
+      if (response.ok) {
+        alert("Girvi item deleted successfully!")
+        fetchGirvi()
+      } else {
+        const data = await response.json()
+        alert(data.error || "Failed to delete girvi item")
+      }
+    } catch (error) {
+      console.error("Delete girvi error:", error)
+      alert("Failed to delete girvi item. Please try again.")
+    }
   }
 
-  const handleRedeemGirvi = (id: number) => {
-    setGirviItems(girviItems.map((item) => (item.id === id ? { ...item, status: "redeemed" as const } : item)))
+  const handleRedeemGirvi = async (id: number) => {
+    const item = girviItems.find((i) => i.id === id)
+    if (!item?._id) return
+
+    try {
+      const response = await fetch("/api/inventory/girvi", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: item._id, status: "redeemed" }),
+      })
+
+      if (response.ok) {
+        alert("Girvi item marked as redeemed!")
+        fetchGirvi()
+      } else {
+        const data = await response.json()
+        alert(data.error || "Failed to update girvi item")
+      }
+    } catch (error) {
+      console.error("Redeem girvi error:", error)
+      alert("Failed to update girvi item. Please try again.")
+    }
   }
 
-  const handleAuctionGirvi = (id: number) => {
-    setGirviItems(girviItems.map((item) => (item.id === id ? { ...item, status: "auctioned" as const } : item)))
+  const handleAuctionGirvi = async (id: number) => {
+    const item = girviItems.find((i) => i.id === id)
+    if (!item?._id) return
+
+    try {
+      const response = await fetch("/api/inventory/girvi", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id: item._id, status: "auctioned" }),
+      })
+
+      if (response.ok) {
+        alert("Girvi item marked as auctioned!")
+        fetchGirvi()
+      } else {
+        const data = await response.json()
+        alert(data.error || "Failed to update girvi item")
+      }
+    } catch (error) {
+      console.error("Auction girvi error:", error)
+      alert("Failed to update girvi item. Please try again.")
+    }
   }
 
   const getStatusBadge = (status: string) => {
@@ -453,7 +411,10 @@ export default function InventoryPage() {
 
   return (
     <div className="p-8">
-      <DashboardHeader title="Inventory Management" subtitle="Manage your jewelry stock and mortgage items" />
+      <DashboardHeader 
+        title="Inventory Stock" 
+        subtitle="View current inventory - Add items via Purchase section" 
+      />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -523,6 +484,14 @@ export default function InventoryPage() {
           <Card className="mb-6">
             <CardContent className="p-4">
               <div className="flex flex-wrap items-center gap-4">
+                <Button
+                  variant="outline"
+                  className="gap-2"
+                  onClick={() => setIsInventoryReportOpen(true)}
+                >
+                  <BarChart3 className="h-4 w-4" />
+                  Inventory Report
+                </Button>
                 <div className="relative flex-1 min-w-[200px]">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
@@ -545,116 +514,6 @@ export default function InventoryPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="bg-primary text-primary-foreground">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Item
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle className="font-serif">Add New Item</DialogTitle>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Label>Inventory Date</Label>
-                        <Input
-                          type="date"
-                          value={newItem.inventoryDate}
-                          onChange={(e) => setNewItem({ ...newItem, inventoryDate: e.target.value })}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Item Name</Label>
-                        <Input
-                          value={newItem.name}
-                          onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
-                          placeholder="Gold Necklace Set"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label>Category</Label>
-                          <Select
-                            value={newItem.category}
-                            onValueChange={(v) => setNewItem({ ...newItem, category: v })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {categories
-                                .filter((c) => c !== "All")
-                                .map((cat) => (
-                                  <SelectItem key={cat} value={cat}>
-                                    {cat}
-                                  </SelectItem>
-                                ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="grid gap-2">
-                          <Label>Purity</Label>
-                          <Select value={newItem.purity} onValueChange={(v) => setNewItem({ ...newItem, purity: v })}>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="24K">24K</SelectItem>
-                              <SelectItem value="22K">22K</SelectItem>
-                              <SelectItem value="18K">18K</SelectItem>
-                              <SelectItem value="925">Silver 925</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label>Weight</Label>
-                          <Input
-                            value={newItem.weight}
-                            onChange={(e) => setNewItem({ ...newItem, weight: e.target.value })}
-                            placeholder="25g"
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label>Quantity</Label>
-                          <Input
-                            type="number"
-                            value={newItem.quantity}
-                            onChange={(e) => setNewItem({ ...newItem, quantity: Number.parseInt(e.target.value) || 0 })}
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label>Cost Price (₹)</Label>
-                          <Input
-                            type="number"
-                            value={newItem.costPrice}
-                            onChange={(e) =>
-                              setNewItem({ ...newItem, costPrice: Number.parseInt(e.target.value) || 0 })
-                            }
-                          />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label>Selling Price (₹)</Label>
-                          <Input
-                            type="number"
-                            value={newItem.sellingPrice}
-                            onChange={(e) =>
-                              setNewItem({ ...newItem, sellingPrice: Number.parseInt(e.target.value) || 0 })
-                            }
-                          />
-                        </div>
-                      </div>
-                      <Button onClick={handleAddItem} className="w-full mt-2">
-                        Add to Inventory
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
               </div>
             </CardContent>
           </Card>
@@ -1079,6 +938,317 @@ export default function InventoryPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Inventory Report Dialog */}
+      <Dialog open={isInventoryReportOpen} onOpenChange={setIsInventoryReportOpen}>
+        <DialogContent className="max-w-[98vw] w-full max-h-[98vh] h-[98vh] flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="font-serif text-2xl flex items-center gap-2">
+              <BarChart3 className="h-6 w-6" />
+              Inventory Report - Detailed Analysis
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+            {/* Filters */}
+            <Card>
+              <CardContent className="p-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-2">
+                    <Label>From Date</Label>
+                    <Input
+                      type="date"
+                      value={reportDateFrom}
+                      onChange={(e) => setReportDateFrom(e.target.value)}
+                      className="border-2"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>To Date</Label>
+                    <Input
+                      type="date"
+                      value={reportDateTo}
+                      onChange={(e) => setReportDateTo(e.target.value)}
+                      className="border-2"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Category</Label>
+                    <Select value={reportCategory} onValueChange={setReportCategory}>
+                      <SelectTrigger className="border-2">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat} value={cat}>
+                            {cat}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-end">
+                    <Button
+                      onClick={() => {
+                        const filteredData = inventory.filter((item) => {
+                          const matchesCategory = reportCategory === "All" || item.category === reportCategory
+                          if (!reportDateFrom && !reportDateTo) return matchesCategory
+                          const itemDate = item.inventoryDate ? new Date(item.inventoryDate) : new Date()
+                          const fromDate = reportDateFrom ? new Date(reportDateFrom) : new Date("2000-01-01")
+                          const toDate = reportDateTo ? new Date(reportDateTo) : new Date()
+                          const matchesDate = itemDate >= fromDate && itemDate <= toDate
+                          return matchesCategory && matchesDate
+                        })
+
+                        // Generate CSV
+                        const headers = [
+                          "Date",
+                          "Item Name",
+                          "Supplier Name",
+                          "Purchase Date",
+                          "Category",
+                          "Weight",
+                          "Purity",
+                          "Quantity",
+                          "Cost Price",
+                          "Selling Price",
+                          "Total Cost",
+                          "Total Value",
+                          "Status",
+                        ]
+                        const csvData = filteredData.map((item) => {
+                          const matchingPurchase = purchases.find(
+                            (p) =>
+                              p.item_name === item.name &&
+                              p.category === item.category &&
+                              p.purity === item.purity
+                          )
+                          return [
+                            item.inventoryDate,
+                            item.name,
+                            matchingPurchase?.supplier_name || "N/A",
+                            matchingPurchase?.purchase_date ? new Date(matchingPurchase.purchase_date).toLocaleDateString("en-IN") : "N/A",
+                            item.category,
+                            item.weight,
+                            item.purity,
+                            item.quantity,
+                            item.costPrice,
+                            item.sellingPrice,
+                            item.costPrice * item.quantity,
+                            item.sellingPrice * item.quantity,
+                            item.status,
+                          ]
+                        })
+
+                        const csv = [
+                          headers.join(","),
+                          ...csvData.map((row) => row.map((cell) => `"${cell}"`).join(",")),
+                        ].join("\\n")
+
+                        const blob = new Blob([csv], { type: "text/csv" })
+                        const url = window.URL.createObjectURL(blob)
+                        const a = document.createElement("a")
+                        a.href = url
+                        a.download = `inventory-report-${new Date().toISOString().split("T")[0]}.csv`
+                        a.click()
+                      }}
+                      className="gap-2 w-full"
+                    >
+                      <FileDown className="h-4 w-4" />
+                      Export CSV
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <Package className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Items</p>
+                      <p className="text-2xl font-bold">
+                        {inventory.filter((item) => {
+                          const matchesCategory = reportCategory === "All" || item.category === reportCategory
+                          if (!reportDateFrom && !reportDateTo) return matchesCategory
+                          const itemDate = item.inventoryDate ? new Date(item.inventoryDate) : new Date()
+                          const fromDate = reportDateFrom ? new Date(reportDateFrom) : new Date("2000-01-01")
+                          const toDate = reportDateTo ? new Date(reportDateTo) : new Date()
+                          const matchesDate = itemDate >= fromDate && itemDate <= toDate
+                          return matchesCategory && matchesDate
+                        }).length}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
+                      <Package className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Quantity</p>
+                      <p className="text-2xl font-bold">
+                        {inventory
+                          .filter((item) => {
+                            const matchesCategory = reportCategory === "All" || item.category === reportCategory
+                            if (!reportDateFrom && !reportDateTo) return matchesCategory
+                            const itemDate = item.inventoryDate ? new Date(item.inventoryDate) : new Date()
+                            const fromDate = reportDateFrom ? new Date(reportDateFrom) : new Date("2000-01-01")
+                            const toDate = reportDateTo ? new Date(reportDateTo) : new Date()
+                            const matchesDate = itemDate >= fromDate && itemDate <= toDate
+                            return matchesCategory && matchesDate
+                          })
+                          .reduce((acc, item) => acc + item.quantity, 0)}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <Package className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total Cost</p>
+                      <p className="text-2xl font-bold">
+                        {formatCurrency(
+                          inventory
+                            .filter((item) => {
+                              const matchesCategory = reportCategory === "All" || item.category === reportCategory
+                              if (!reportDateFrom && !reportDateTo) return matchesCategory
+                              const itemDate = item.inventoryDate ? new Date(item.inventoryDate) : new Date()
+                              const fromDate = reportDateFrom ? new Date(reportDateFrom) : new Date("2000-01-01")
+                              const toDate = reportDateTo ? new Date(reportDateTo) : new Date()
+                              const matchesDate = itemDate >= fromDate && itemDate <= toDate
+                              return matchesCategory && matchesDate
+                            })
+                            .reduce((acc, item) => acc + item.costPrice * item.quantity, 0),
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center">
+                      <Package className="h-5 w-5 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-muted-foreground">Expected Value</p>
+                      <p className="text-2xl font-bold">
+                        {formatCurrency(
+                          inventory
+                            .filter((item) => {
+                              const matchesCategory = reportCategory === "All" || item.category === reportCategory
+                              if (!reportDateFrom && !reportDateTo) return matchesCategory
+                              const itemDate = item.inventoryDate ? new Date(item.inventoryDate) : new Date()
+                              const fromDate = reportDateFrom ? new Date(reportDateFrom) : new Date("2000-01-01")
+                              const toDate = reportDateTo ? new Date(reportDateTo) : new Date()
+                              const matchesDate = itemDate >= fromDate && itemDate <= toDate
+                              return matchesCategory && matchesDate
+                            })
+                            .reduce((acc, item) => acc + item.sellingPrice * item.quantity, 0),
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Detailed Report Table */}
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead>Date Added</TableHead>
+                      <TableHead>Item Name</TableHead>
+                      <TableHead>Supplier</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Weight</TableHead>
+                      <TableHead>Purity</TableHead>
+                      <TableHead>Quantity</TableHead>
+                      <TableHead>Cost Price</TableHead>
+                      <TableHead>Selling Price</TableHead>
+                      <TableHead>Total Cost</TableHead>
+                      <TableHead>Total Value</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {inventory
+                      .filter((item) => {
+                        const matchesCategory = reportCategory === "All" || item.category === reportCategory
+                        if (!reportDateFrom && !reportDateTo) return matchesCategory
+                        const itemDate = item.inventoryDate ? new Date(item.inventoryDate) : new Date()
+                        const fromDate = reportDateFrom ? new Date(reportDateFrom) : new Date("2000-01-01")
+                        const toDate = reportDateTo ? new Date(reportDateTo) : new Date()
+                        const matchesDate = itemDate >= fromDate && itemDate <= toDate
+                        return matchesCategory && matchesDate
+                      })
+                      .map((item) => {
+                        // Find matching purchase to get supplier info
+                        const matchingPurchase = purchases.find(
+                          (p) =>
+                            p.item_name === item.name &&
+                            p.category === item.category &&
+                            p.purity === item.purity
+                        )
+                        
+                        return (
+                        <TableRow key={item.id}>
+                          <TableCell className="text-sm">{formatDate(item.inventoryDate)}</TableCell>
+                          <TableCell className="font-medium">{item.name}</TableCell>
+                          <TableCell>
+                            {matchingPurchase ? (
+                              <div className="text-sm">
+                                <p className="font-medium">{matchingPurchase.supplier_name}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {new Date(matchingPurchase.purchase_date).toLocaleDateString("en-IN")}
+                                </p>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">N/A</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{item.category}</TableCell>
+                          <TableCell>{item.weight}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{item.purity}</Badge>
+                          </TableCell>
+                          <TableCell>{item.quantity}</TableCell>
+                          <TableCell>{formatCurrency(item.costPrice)}</TableCell>
+                          <TableCell>{formatCurrency(item.sellingPrice)}</TableCell>
+                          <TableCell className="font-semibold">
+                            {formatCurrency(item.costPrice * item.quantity)}
+                          </TableCell>
+                          <TableCell className="font-semibold text-green-600">
+                            {formatCurrency(item.sellingPrice * item.quantity)}
+                          </TableCell>
+                          <TableCell>{getStatusBadge(item.status)}</TableCell>
+                        </TableRow>
+                        )
+                      })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
