@@ -4,12 +4,13 @@
   "/api/inventory/girvi/route": "app/api/inventory/girvi/route.js",
   "/api/inventory/normal/route": "app/api/inventory/normal/route.js",
   "/api/purchase/route": "app/api/purchase/route.js",
-  "/api/sales/bill/route": "app/api/sales/bill/route.js",
   "/api/sales/route": "app/api/sales/route.js",
   "/api/settings/route": "app/api/settings/route.js",
   "/dashboard/inventory/page": "app/dashboard/inventory/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
   "/dashboard/purchase/page": "app/dashboard/purchase/page.js",
   "/dashboard/reports/page": "app/dashboard/reports/page.js",
   "/dashboard/sales-history/page": "app/dashboard/sales-history/page.js",
-  "/dashboard/sales/page": "app/dashboard/sales/page.js"
+  "/dashboard/sales/page": "app/dashboard/sales/page.js",
+  "/dashboard/settings/page": "app/dashboard/settings/page.js"
 }
