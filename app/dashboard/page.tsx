@@ -126,7 +126,7 @@ export default async function DashboardPage() {
             {data.recentSales.length > 0 ? (
               <div className="space-y-4">
                 {data.recentSales.map((sale) => (
-                  <div key={sale.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+                  <div key={sale._id.toString()} className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
                     <div className="flex items-center gap-4">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
                         <ArrowUpRight className="h-5 w-5 text-primary" />
