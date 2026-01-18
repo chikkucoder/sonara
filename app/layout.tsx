@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { MainLayout } from "@/components/main-layout"
 import { AuthProvider } from "@/components/auth-provider"
+import { Toaster } from "@/components/ui/toaster"
 
 const _playfair = Playfair_Display({ subsets: ["latin"], variable: "--font-serif" })
 const _inter = Inter({ subsets: ["latin"] })
@@ -26,6 +27,7 @@ export default function RootLayout({
         <AuthProvider>
           <MainLayout>{children}</MainLayout>
         </AuthProvider>
+        <Toaster />
         <Analytics />
       </body>
     </html>

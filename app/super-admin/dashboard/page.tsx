@@ -38,6 +38,10 @@ async function getSuperAdminData() {
         shop_address: shop?.shop_address || null,
         shop_phone: shop?.shop_phone || null,
         shop_gst: shop?.shop_gst || null,
+        membership_type: user.membership_type || "free",
+        membership_status: user.membership_status || "active",
+        membership_end_date: user.membership_end_date?.toString() || null,
+        last_login: user.last_login?.toString() || null,
         created_at: user.created_at?.toString() || new Date().toString(),
       }
     })

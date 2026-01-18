@@ -1,361 +1,480 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { IndianRupee, TrendingUp, TrendingDown, Download, Calendar, Package, ShoppingCart, Users } from "lucide-react"
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-} from "recharts"
+  IndianRupee,
+  TrendingUp,
+  ShoppingCart,
+  Package,
+  FileText,
+  Search,
+  Calendar,
+} from "lucide-react"
 
-const salesData = [
-  { month: "Jan", sales: 2400000, orders: 45 },
-  { month: "Feb", sales: 1800000, orders: 38 },
-  { month: "Mar", sales: 3200000, orders: 62 },
-  { month: "Apr", sales: 2800000, orders: 55 },
-  { month: "May", sales: 3600000, orders: 72 },
-  { month: "Jun", sales: 3100000, orders: 58 },
-  { month: "Jul", sales: 4200000, orders: 85 },
-  { month: "Aug", sales: 3800000, orders: 75 },
-  { month: "Sep", sales: 4500000, orders: 92 },
-  { month: "Oct", sales: 4100000, orders: 82 },
-  { month: "Nov", sales: 5200000, orders: 105 },
-  { month: "Dec", sales: 4800000, orders: 98 },
-]
+interface Transaction {
+  _id: string
+  type: "sale" | "purchase" | "expense" | "girvi" | "private_sale"
+  date: string
+  amount: number
+  description: string
+  payment_method?: string
+  status: string
+}
 
-const categoryData = [
-  { name: "Gold Jewelry", value: 45, amount: 18500000 },
-  { name: "Diamond", value: 25, amount: 12000000 },
-  { name: "Silver", value: 15, amount: 4500000 },
-  { name: "Platinum", value: 10, amount: 6000000 },
-  { name: "Others", value: 5, amount: 2000000 },
-]
+const formatCurrency = (amount: number) => {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 0,
+  }).format(amount)
+}
 
-const COLORS = ["#C9A962", "#E8D5B7", "#8B7355", "#A68B5B", "#D4C4A8"]
-
-const topProducts = [
-  { name: "Gold Necklace Set 22K", sold: 45, revenue: 12150000 },
-  { name: "Diamond Ring Collection", sold: 38, revenue: 4180000 },
-  { name: "Gold Bangles (Pair)", sold: 52, revenue: 10140000 },
-  { name: "Diamond Pendant", sold: 28, revenue: 4620000 },
-  { name: "Gold Chain 22K", sold: 65, revenue: 9750000 },
-]
-
-const topCustomers = [
-  { name: "Priya Sharma", purchases: 8, totalSpent: 1850000 },
-  { name: "Amit Patel", purchases: 6, totalSpent: 1420000 },
-  { name: "Sunita Devi", purchases: 5, totalSpent: 980000 },
-  { name: "Rahul Singh", purchases: 4, totalSpent: 875000 },
-  { name: "Meera Joshi", purchases: 4, totalSpent: 720000 },
-]
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  })
+}
 
 export default function ReportsPage() {
-  const [timeRange, setTimeRange] = useState("year")
+  const [activeTab, setActiveTab] = useState("summary")
+  const [sales, setSales] = useState<any[]>([])
+  const [purchases, setPurchases] = useState<any[]>([])
+  const [girvi, setGirvi] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
 
-  const formatCurrency = (amount: number) => {
-    if (amount >= 10000000) {
-      return `₹${(amount / 10000000).toFixed(2)} Cr`
-    } else if (amount >= 100000) {
-      return `₹${(amount / 100000).toFixed(2)} L`
+  useEffect(() => {
+    fetchAllData()
+  }, [])
+
+  const fetchAllData = async () => {
+    try {
+      setLoading(true)
+      const [salesRes, purchasesRes, girviRes] = await Promise.all([
+        fetch("/api/sales"),
+        fetch("/api/purchase"),
+        fetch("/api/girvi"),
+      ])
+
+      const salesData = await salesRes.json()
+      const purchasesData = await purchasesRes.json()
+      const girviData = await girviRes.json()
+
+      setSales(Array.isArray(salesData.data) ? salesData.data : [])
+      setPurchases(Array.isArray(purchasesData.data) ? purchasesData.data : [])
+      setGirvi(Array.isArray(girviData.data) ? girviData.data : [])
+    } catch (error) {
+      console.error("Error fetching data:", error)
+      setSales([])
+      setPurchases([])
+      setGirvi([])
+    } finally {
+      setLoading(false)
     }
-    return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
-      amount,
-    )
   }
 
-  const totalRevenue = salesData.reduce((acc, d) => acc + d.sales, 0)
-  const totalOrders = salesData.reduce((acc, d) => acc + d.orders, 0)
-  const avgOrderValue = totalRevenue / totalOrders
+  // Calculate totals
+  const totalSales = sales.reduce((sum, s) => sum + (s.total || 0), 0)
+  const totalPurchases = purchases.reduce((sum, p) => sum + (p.total_amount || 0), 0)
+  const totalGirvi = girvi.reduce((sum, g) => sum + (g.amount || 0), 0)
+  const totalRevenue = totalSales
+  const totalExpenses = totalPurchases
+
+  // Today's data
+  const today = new Date().toISOString().split("T")[0]
+  const todaySales = sales.filter((s) => s.sale_date?.split("T")[0] === today)
+  const todayPurchases = purchases.filter((p) => p.purchase_date?.split("T")[0] === today)
+  const todayGirvi = girvi.filter((g) => g.date?.split("T")[0] === today)
+  
+  const todayTotalSales = todaySales.reduce((sum, s) => sum + (s.total || 0), 0)
+  const todayTotalPurchases = todayPurchases.reduce((sum, p) => sum + (p.total_amount || 0), 0)
+  const todayTotalGirvi = todayGirvi.reduce((sum, g) => sum + (g.amount || 0), 0)
+
+  // Dues
+  const pendingGirvi = girvi.filter((g) => g.status === "active")
+  const totalDues = pendingGirvi.reduce((sum, g) => sum + (g.amount || 0), 0)
+
+  // All transactions combined
+  const allTransactions = [
+    ...sales.map((s) => ({
+      _id: s._id,
+      type: "sale" as const,
+      date: s.sale_date,
+      amount: s.total,
+      description: `Sale - ${s.invoice_no}`,
+      payment_method: s.payment_method,
+      status: s.payment_status,
+    })),
+    ...purchases.map((p) => ({
+      _id: p._id,
+      type: "purchase" as const,
+      date: p.purchase_date,
+      amount: p.total_amount,
+      description: `Purchase - ${p.supplier_name}`,
+      payment_method: p.payment_mode,
+      status: "completed",
+    })),
+    ...girvi.map((g) => ({
+      _id: g._id,
+      type: "girvi" as const,
+      date: g.date,
+      amount: g.amount,
+      description: `Girvi - ${g.customer_name}`,
+      payment_method: "cash",
+      status: g.status,
+    })),
+  ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  const filteredTransactions = allTransactions.filter((t) =>
+    t.description.toLowerCase().includes(searchQuery.toLowerCase())
+  )
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* MainLayout handles Sidebar */}
-      <main>
-        <div className="p-8">
-          <DashboardHeader
-            title="Reports & Analytics"
-            subtitle="Comprehensive business insights and performance metrics"
-          />
+    <div className="min-h-screen bg-background p-8">
+      <DashboardHeader
+        title="Business Reports"
+        subtitle="Comprehensive insights and analytics"
+      />
 
-          {/* Time Range Filter */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              <Select value={timeRange} onValueChange={setTimeRange}>
-                <SelectTrigger className="w-[180px]">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="week">This Week</SelectItem>
-                  <SelectItem value="month">This Month</SelectItem>
-                  <SelectItem value="quarter">This Quarter</SelectItem>
-                  <SelectItem value="year">This Year</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button variant="outline">
-              <Download className="h-4 w-4 mr-2" />
-              Export Report
-            </Button>
-          </div>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-6">
+        <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsTrigger value="summary">
+            <FileText className="h-4 w-4 mr-2" />
+            Summary
+          </TabsTrigger>
+          <TabsTrigger value="trends">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Trends
+          </TabsTrigger>
+          <TabsTrigger value="transactions">
+            <Calendar className="h-4 w-4 mr-2" />
+            Transactions
+          </TabsTrigger>
+        </TabsList>
 
+        {/* Summary Tab */}
+        <TabsContent value="summary" className="mt-6">
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Revenue</p>
-                    <p className="text-2xl font-bold">{formatCurrency(totalRevenue)}</p>
-                    <p className="text-xs text-green-600 flex items-center mt-1">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      +18.5% from last year
-                    </p>
-                  </div>
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <IndianRupee className="h-5 w-5 text-primary" />
-                  </div>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
+                  <IndianRupee className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Sales</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalSales)}</p>
+                  <p className="text-xs text-muted-foreground">{sales.length} transactions</p>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Orders</p>
-                    <p className="text-2xl font-bold">{totalOrders}</p>
-                    <p className="text-xs text-green-600 flex items-center mt-1">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      +12.3% from last year
-                    </p>
-                  </div>
-                  <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
-                    <ShoppingCart className="h-5 w-5 text-green-600" />
-                  </div>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <ShoppingCart className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Purchases</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalPurchases)}</p>
+                  <p className="text-xs text-muted-foreground">{purchases.length} orders</p>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Avg. Order Value</p>
-                    <p className="text-2xl font-bold">{formatCurrency(avgOrderValue)}</p>
-                    <p className="text-xs text-green-600 flex items-center mt-1">
-                      <TrendingUp className="h-3 w-3 mr-1" />
-                      +5.2% from last year
-                    </p>
-                  </div>
-                  <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <TrendingUp className="h-5 w-5 text-blue-600" />
-                  </div>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <Package className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Girvi</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalGirvi)}</p>
+                  <p className="text-xs text-muted-foreground">{girvi.length} items</p>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Active Customers</p>
-                    <p className="text-2xl font-bold">248</p>
-                    <p className="text-xs text-red-500 flex items-center mt-1">
-                      <TrendingDown className="h-3 w-3 mr-1" />
-                      -2.1% from last year
-                    </p>
-                  </div>
-                  <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-purple-600" />
-                  </div>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Net Revenue</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalRevenue - totalExpenses)}</p>
+                  <p className="text-xs text-muted-foreground">Profit</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Charts Section */}
-          <Tabs defaultValue="sales" className="mb-6">
-            <TabsList>
-              <TabsTrigger value="sales">Sales Trend</TabsTrigger>
-              <TabsTrigger value="categories">Category Wise</TabsTrigger>
-              <TabsTrigger value="orders">Orders</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="sales">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-serif">Monthly Sales Trend</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={salesData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                        <XAxis dataKey="month" stroke="#666" />
-                        <YAxis stroke="#666" tickFormatter={(v) => `₹${v / 100000}L`} />
-                        <Tooltip
-                          formatter={(value: number) => [formatCurrency(value), "Sales"]}
-                          contentStyle={{ background: "#fff", border: "1px solid #e5e5e5", borderRadius: "8px" }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="sales"
-                          stroke="#C9A962"
-                          fill="#C9A962"
-                          fillOpacity={0.2}
-                          strokeWidth={2}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="categories">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-serif">Sales by Category</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="h-80">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={categoryData}
-                            cx="50%"
-                            cy="50%"
-                            labelLine={false}
-                            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                            outerRadius={100}
-                            fill="#8884d8"
-                            dataKey="value"
-                          >
-                            {categoryData.map((_, index) => (
-                              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                            ))}
-                          </Pie>
-                          <Tooltip formatter={(value) => [`${value}%`, "Share"]} />
-                        </PieChart>
-                      </ResponsiveContainer>
-                    </div>
-                    <div className="space-y-4">
-                      {categoryData.map((cat, index) => (
-                        <div key={cat.name} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                          <div className="flex items-center gap-3">
-                            <div className="h-3 w-3 rounded-full" style={{ backgroundColor: COLORS[index] }} />
-                            <span className="font-medium">{cat.name}</span>
-                          </div>
-                          <span className="font-semibold">{formatCurrency(cat.amount)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="orders">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="font-serif">Monthly Orders</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-80">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={salesData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e5e5" />
-                        <XAxis dataKey="month" stroke="#666" />
-                        <YAxis stroke="#666" />
-                        <Tooltip
-                          formatter={(value) => [value, "Orders"]}
-                          contentStyle={{ background: "#fff", border: "1px solid #e5e5e5", borderRadius: "8px" }}
-                        />
-                        <Bar dataKey="orders" fill="#C9A962" radius={[4, 4, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-
-          {/* Tables */}
+          {/* History Tables */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Top Products */}
+            {/* Sales History */}
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="font-serif">Top Selling Products</CardTitle>
-                <Package className="h-5 w-5 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-lg mb-4">Recent Sales</h3>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead className="text-right">Sold</TableHead>
-                      <TableHead className="text-right">Revenue</TableHead>
+                      <TableHead>Invoice</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Amount</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {topProducts.map((product, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell className="text-right">{product.sold}</TableCell>
-                        <TableCell className="text-right font-semibold">{formatCurrency(product.revenue)}</TableCell>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-8">Loading...</TableCell>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
-
-            {/* Top Customers */}
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle className="font-serif">Top Customers</CardTitle>
-                <Users className="h-5 w-5 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Customer</TableHead>
-                      <TableHead className="text-right">Purchases</TableHead>
-                      <TableHead className="text-right">Total Spent</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {topCustomers.map((customer, index) => (
-                      <TableRow key={index}>
-                        <TableCell className="font-medium">{customer.name}</TableCell>
-                        <TableCell className="text-right">{customer.purchases}</TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {formatCurrency(customer.totalSpent)}
+                    ) : sales.slice(0, 5).length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                          No sales yet
                         </TableCell>
                       </TableRow>
-                    ))}
+                    ) : (
+                      sales.slice(0, 5).map((sale) => (
+                        <TableRow key={sale._id}>
+                          <TableCell className="font-medium">{sale.invoice_no}</TableCell>
+                          <TableCell>{formatDate(sale.sale_date)}</TableCell>
+                          <TableCell>{formatCurrency(sale.total)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* Purchase History */}
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="font-semibold text-lg mb-4">Recent Purchases</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Supplier</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-8">Loading...</TableCell>
+                      </TableRow>
+                    ) : purchases.slice(0, 5).length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                          No purchases yet
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      purchases.slice(0, 5).map((purchase) => (
+                        <TableRow key={purchase._id}>
+                          <TableCell className="font-medium">{purchase.supplier_name}</TableCell>
+                          <TableCell>{formatDate(purchase.purchase_date)}</TableCell>
+                          <TableCell>{formatCurrency(purchase.total_amount)}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
           </div>
-        </div>
-      </main>
+        </TabsContent>
+
+        {/* Trends Tab */}
+        <TabsContent value="trends" className="mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
+                  <IndianRupee className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Today's Sales</p>
+                  <p className="text-2xl font-bold">{formatCurrency(todayTotalSales)}</p>
+                  <p className="text-xs text-muted-foreground">{todaySales.length} orders</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <ShoppingCart className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Today's Purchases</p>
+                  <p className="text-2xl font-bold">{formatCurrency(todayTotalPurchases)}</p>
+                  <p className="text-xs text-muted-foreground">{todayPurchases.length} items</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <Package className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Today's Girvi</p>
+                  <p className="text-2xl font-bold">{formatCurrency(todayTotalGirvi)}</p>
+                  <p className="text-xs text-muted-foreground">{todayGirvi.length} items</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4 flex items-center gap-4">
+                <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-red-600" />
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Total Dues</p>
+                  <p className="text-2xl font-bold">{formatCurrency(totalDues)}</p>
+                  <p className="text-xs text-muted-foreground">{pendingGirvi.length} pending</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardContent className="p-6">
+              <h3 className="font-semibold text-lg mb-4">Daily Trends</h3>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Metric</TableHead>
+                    <TableHead>Today</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Average</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <TableRow>
+                    <TableCell className="font-medium">Sales</TableCell>
+                    <TableCell>{formatCurrency(todayTotalSales)}</TableCell>
+                    <TableCell>{formatCurrency(totalSales)}</TableCell>
+                    <TableCell>{formatCurrency(sales.length > 0 ? totalSales / sales.length : 0)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Purchases</TableCell>
+                    <TableCell>{formatCurrency(todayTotalPurchases)}</TableCell>
+                    <TableCell>{formatCurrency(totalPurchases)}</TableCell>
+                    <TableCell>{formatCurrency(purchases.length > 0 ? totalPurchases / purchases.length : 0)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Girvi</TableCell>
+                    <TableCell>{formatCurrency(todayTotalGirvi)}</TableCell>
+                    <TableCell>{formatCurrency(totalGirvi)}</TableCell>
+                    <TableCell>{formatCurrency(girvi.length > 0 ? totalGirvi / girvi.length : 0)}</TableCell>
+                  </TableRow>
+                  <TableRow>
+                    <TableCell className="font-medium">Dues/Payments</TableCell>
+                    <TableCell>-</TableCell>
+                    <TableCell>{formatCurrency(totalDues)}</TableCell>
+                    <TableCell>{pendingGirvi.length} pending</TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Transactions Tab */}
+        <TabsContent value="transactions" className="mt-6">
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search transactions..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Payment</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {loading ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8">Loading transactions...</TableCell>
+                    </TableRow>
+                  ) : filteredTransactions.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        No transactions found
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    filteredTransactions.map((transaction) => (
+                      <TableRow key={transaction._id}>
+                        <TableCell>
+                          <Badge
+                            variant="outline"
+                            className={
+                              transaction.type === "sale"
+                                ? "bg-green-100 text-green-700"
+                                : transaction.type === "purchase"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-amber-100 text-amber-700"
+                            }
+                          >
+                            {transaction.type.toUpperCase()}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium">{transaction.description}</TableCell>
+                        <TableCell>{formatDate(transaction.date)}</TableCell>
+                        <TableCell className="font-semibold">{formatCurrency(transaction.amount)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{transaction.payment_method?.toUpperCase() || "N/A"}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={transaction.status === "paid" || transaction.status === "completed" ? "default" : "secondary"}
+                            className={
+                              transaction.status === "paid" || transaction.status === "completed"
+                                ? "bg-green-100 text-green-700"
+                                : transaction.status === "active"
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-gray-100 text-gray-700"
+                            }
+                          >
+                            {transaction.status}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

@@ -1,10 +1,22 @@
 {
   "app": {
-    "[project]/app/super-admin/dashboard/page": [
+    "[project]/app/dashboard/inventory/page": [
       "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
     ],
-    "[project]/app/super-admin/login/page": [
+    "[project]/app/dashboard/purchase/page": [
+      "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/app/dashboard/reports/page": [
+      "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/app/dashboard/sales-history/page": [
+      "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
+      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
+    ],
+    "[project]/app/dashboard/sales/page": [
       "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
     ]

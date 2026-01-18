@@ -133,7 +133,12 @@ async function dbConnect() {
     }
     if (!cached.promise) {
         const opts = {
-            bufferCommands: false
+            bufferCommands: false,
+            maxPoolSize: 10,
+            minPoolSize: 2,
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+            family: 4
         };
         cached.promise = __TURBOPACK__imported__module__$5b$externals$5d2f$mongoose__$5b$external$5d$__$28$mongoose$2c$__cjs$29$__["default"].connect(MONGODB_URI, opts).then((mongoose)=>{
             return mongoose;
@@ -191,6 +196,65 @@ const UserSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mongoos
     },
     shop_id: {
         type: String
+    },
+    shop_name: {
+        type: String
+    },
+    shop_address: {
+        type: String
+    },
+    phone: {
+        type: String
+    },
+    gst_no: {
+        type: String
+    },
+    membership_type: {
+        type: String,
+        enum: [
+            "free",
+            "basic",
+            "premium",
+            "enterprise"
+        ],
+        default: "free"
+    },
+    membership_status: {
+        type: String,
+        enum: [
+            "active",
+            "expired",
+            "suspended"
+        ],
+        default: "active"
+    },
+    membership_start_date: {
+        type: Date,
+        default: Date.now
+    },
+    membership_end_date: {
+        type: Date
+    },
+    max_users: {
+        type: Number,
+        default: 1
+    },
+    max_inventory: {
+        type: Number,
+        default: 100
+    },
+    features_enabled: {
+        type: [
+            String
+        ],
+        default: [
+            "inventory",
+            "sales",
+            "reports"
+        ]
+    },
+    last_login: {
+        type: Date
     }
 }, {
     timestamps: {

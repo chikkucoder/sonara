@@ -1,14 +1,20 @@
 import { NextResponse } from "next/server"
-import { requireAuth } from "@/lib/auth"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import dbConnect from "@/lib/mongodb"
 import User from "@/lib/models/User"
 
 export async function GET() {
   try {
-    const user = await requireAuth()
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const userId = (session.user as any).id
     await dbConnect()
 
-    const userData = await User.findById((user as any).id).select("-password")
+    const userData = await User.findById(userId).select("-password")
 
     if (!userData) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
@@ -25,18 +31,29 @@ export async function GET() {
 
 export async function PUT(request: Request) {
   try {
-    const user = await requireAuth()
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const userId = (session.user as any).id
     await dbConnect()
 
     const body = await request.json()
 
-    const userData = await User.findByIdAndUpdate((user as any).id, body, { new: true }).select("-password")
+    // Remove password from update if present
+    const { password, ...updateData } = body
+
+    const userData = await User.findByIdAndUpdate(userId, updateData, { new: true }).select("-password")
 
     if (!userData) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    return NextResponse.json({ data: userData })
+    return NextResponse.json({ 
+      success: true,
+      data: userData 
+    })
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update profile" },

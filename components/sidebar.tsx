@@ -17,7 +17,7 @@ import {
   ChevronRight,
 } from "lucide-react"
 import { create } from "zustand"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface SidebarStore {
   isExpanded: boolean
@@ -31,9 +31,10 @@ export const useSidebarStore = create<SidebarStore>((set) => ({
 
 const navigation = [
   { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { name: "Inventory", href: "/dashboard/inventory", icon: Package },
-  { name: "Inventory Report", href: "/dashboard/inventory-report", icon: FileText },
+  { name: "Purchase", href: "/dashboard/purchase", icon: Package },
+  { name: "Inventory", href: "/dashboard/inventory", icon: FileText },
   { name: "Sales", href: "/dashboard/sales", icon: ShoppingCart },
+  { name: "Sales History", href: "/dashboard/sales-history", icon: FileText },
   { name: "Reports", href: "/dashboard/reports", icon: BarChart3 },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]
@@ -43,6 +44,29 @@ export function Sidebar() {
   const router = useRouter()
   const { isExpanded, toggle } = useSidebarStore()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [shopName, setShopName] = useState("Ratan")
+  const [ownerName, setOwnerName] = useState("Shop Owner")
+
+  useEffect(() => {
+    fetchShopDetails()
+  }, [])
+
+  const fetchShopDetails = async () => {
+    try {
+      const response = await fetch("/api/settings")
+      if (response.ok) {
+        const data = await response.json()
+        if (data.store?.name) {
+          setShopName(data.store.name)
+        }
+        if (data.profile?.name) {
+          setOwnerName(data.profile.name)
+        }
+      }
+    } catch (error) {
+      console.error("Failed to load shop details:", error)
+    }
+  }
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -77,7 +101,7 @@ export function Sidebar() {
           </div>
           {isExpanded && (
             <div className="overflow-hidden">
-              <h1 className="font-serif text-xl font-bold text-sidebar-primary whitespace-nowrap">Ratan</h1>
+              <h1 className="font-serif text-xl font-bold text-sidebar-primary whitespace-nowrap">{shopName}</h1>
               <p className="text-xs text-sidebar-foreground/60 whitespace-nowrap">Jewellers</p>
             </div>
           )}
@@ -123,12 +147,12 @@ export function Sidebar() {
         >
           <div className={cn("flex items-center", isExpanded ? "gap-3" : "flex-col gap-2")}>
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-primary text-sidebar-primary-foreground font-semibold flex-shrink-0">
-              RJ
+              {ownerName.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
             </div>
             {isExpanded && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">Rajesh Kumar</p>
-                <p className="text-xs text-sidebar-foreground/60">Admin</p>
+                <p className="text-sm font-medium truncate">{ownerName}</p>
+                <p className="text-xs text-sidebar-foreground/60">Owner</p>
               </div>
             )}
             <button

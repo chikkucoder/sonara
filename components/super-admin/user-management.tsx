@@ -29,6 +29,10 @@ interface Profile {
   shop_address: string | null
   shop_phone: string | null
   shop_gst: string | null
+  membership_type?: string
+  membership_status?: string
+  membership_end_date?: string
+  last_login?: string
   created_at: string
 }
 
@@ -45,6 +49,7 @@ export function UserManagement({ users }: { users: Profile[] }) {
     shop_address: "",
     shop_phone: "",
     shop_gst: "",
+    membership_type: "free",
   })
 
   const handleCreateUser = async (e: React.FormEvent) => {
@@ -74,6 +79,7 @@ export function UserManagement({ users }: { users: Profile[] }) {
         shop_address: "",
         shop_phone: "",
         shop_gst: "",
+        membership_type: "free",
       })
       router.refresh()
     } catch (err) {
@@ -98,6 +104,37 @@ export function UserManagement({ users }: { users: Profile[] }) {
       router.refresh()
     } catch (err) {
       alert(err instanceof Error ? err.message : "Failed to update user")
+    }
+  }
+
+  const handleUpdateMembership = async (userId: string, membershipType: string) => {
+    try {
+      const response = await fetch("/api/super-admin/users", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, membership_type: membershipType }),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to update membership")
+      }
+
+      router.refresh()
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Failed to update membership")
+    }
+  }
+
+  const getMembershipColor = (type?: string) => {
+    switch (type) {
+      case "enterprise":
+        return "bg-purple-500/20 text-purple-400 border-purple-500/30"
+      case "premium":
+        return "bg-amber-500/20 text-amber-400 border-amber-500/30"
+      case "basic":
+        return "bg-blue-500/20 text-blue-400 border-blue-500/30"
+      default:
+        return "bg-slate-500/20 text-slate-400 border-slate-500/30"
     }
   }
 
@@ -254,6 +291,23 @@ export function UserManagement({ users }: { users: Profile[] }) {
                   </div>
                 </div>
 
+                <div className="space-y-2">
+                  <Label htmlFor="membership_type" className="text-slate-200">
+                    Membership Plan *
+                  </Label>
+                  <select
+                    id="membership_type"
+                    value={formData.membership_type}
+                    onChange={(e) => setFormData({ ...formData, membership_type: e.target.value })}
+                    className="w-full px-3 py-2 bg-slate-800/50 border border-slate-700 rounded-md text-slate-100"
+                  >
+                    <option value="free">Free (100 items, 1 user)</option>
+                    <option value="basic">Basic (500 items, 3 users)</option>
+                    <option value="premium">Premium (2000 items, 10 users)</option>
+                    <option value="enterprise">Enterprise (Unlimited)</option>
+                  </select>
+                </div>
+
                 {error && (
                   <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
                     {error}
@@ -278,7 +332,7 @@ export function UserManagement({ users }: { users: Profile[] }) {
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-3">
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap">
                         <h3 className="font-semibold text-lg text-slate-100">{user.full_name || "No Name"}</h3>
                         {user.role === "super_admin" ? (
                           <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
@@ -294,6 +348,14 @@ export function UserManagement({ users }: { users: Profile[] }) {
                           <Badge className="bg-red-500/20 text-red-400 border-red-500/30">
                             <UserX className="w-3 h-3 mr-1" />
                             Disabled
+                          </Badge>
+                        )}
+                        <Badge className={getMembershipColor(user.membership_type)}>
+                          {user.membership_type?.toUpperCase() || "FREE"}
+                        </Badge>
+                        {user.membership_status === "expired" && (
+                          <Badge className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                            Expired
                           </Badge>
                         )}
                       </div>
@@ -321,26 +383,48 @@ export function UserManagement({ users }: { users: Profile[] }) {
                       </div>
                       {user.shop_address && <p className="text-sm text-slate-400">{user.shop_address}</p>}
                       {user.shop_gst && <p className="text-sm text-slate-400">GST: {user.shop_gst}</p>}
+                      {user.membership_end_date && (
+                        <p className="text-sm text-slate-400">
+                          Membership expires: {new Date(user.membership_end_date).toLocaleDateString()}
+                        </p>
+                      )}
+                      {user.last_login && (
+                        <p className="text-xs text-slate-500">
+                          Last login: {new Date(user.last_login).toLocaleString()}
+                        </p>
+                      )}
                     </div>
                     {user.role !== "super_admin" && (
-                      <Button
-                        variant={user.enabled ? "destructive" : "default"}
-                        size="sm"
-                        onClick={() => handleToggleEnabled(user.id, user.enabled)}
-                        className={user.enabled ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
-                      >
-                        {user.enabled ? (
-                          <>
-                            <UserX className="w-4 h-4 mr-2" />
-                            Disable
-                          </>
-                        ) : (
-                          <>
-                            <UserCheck className="w-4 h-4 mr-2" />
-                            Enable
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <Button
+                          variant={user.enabled ? "destructive" : "default"}
+                          size="sm"
+                          onClick={() => handleToggleEnabled(user.id, user.enabled)}
+                          className={user.enabled ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
+                        >
+                          {user.enabled ? (
+                            <>
+                              <UserX className="w-4 h-4 mr-2" />
+                              Disable
+                            </>
+                          ) : (
+                            <>
+                              <UserCheck className="w-4 h-4 mr-2" />
+                              Enable
+                            </>
+                          )}
+                        </Button>
+                        <select
+                          value={user.membership_type || "free"}
+                          onChange={(e) => handleUpdateMembership(user.id, e.target.value)}
+                          className="px-2 py-1 text-xs bg-slate-800 border border-slate-700 rounded text-slate-100"
+                        >
+                          <option value="free">Free</option>
+                          <option value="basic">Basic</option>
+                          <option value="premium">Premium</option>
+                          <option value="enterprise">Enterprise</option>
+                        </select>
+                      </div>
                     )}
                   </div>
                 </div>

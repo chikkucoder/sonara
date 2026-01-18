@@ -1,0 +1,68 @@
+import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
+import dbConnect from "@/lib/mongodb"
+import User from "@/lib/models/User"
+import bcrypt from "bcryptjs"
+
+export async function POST(request: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    const userId = (session.user as any).id
+    await dbConnect()
+
+    const body = await request.json()
+    const { currentPassword, newPassword } = body
+
+    if (!currentPassword || !newPassword) {
+      return NextResponse.json(
+        { error: "Current password and new password are required" },
+        { status: 400 }
+      )
+    }
+
+    if (newPassword.length < 8) {
+      return NextResponse.json(
+        { error: "New password must be at least 8 characters" },
+        { status: 400 }
+      )
+    }
+
+    // Get user with password
+    const user = await User.findById(userId)
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    // Verify current password
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password)
+    if (!isValidPassword) {
+      return NextResponse.json(
+        { error: "Current password is incorrect" },
+        { status: 400 }
+      )
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10)
+
+    // Update password
+    user.password = hashedPassword
+    await user.save()
+
+    return NextResponse.json({ 
+      success: true,
+      message: "Password updated successfully" 
+    })
+  } catch (error) {
+    console.error("Password change error:", error)
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Failed to change password" },
+      { status: 500 }
+    )
+  }
+}

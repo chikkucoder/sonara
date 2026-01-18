@@ -1,33 +1,31 @@
 import { requireAuth } from "@/lib/auth"
 import dbConnect from "@/lib/mongodb"
+import PrivateSale from "@/lib/models/PrivateSale"
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 
 export async function GET(request: Request) {
   try {
-    const supabase = await createClient()
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const userId = (session.user as any).id
+    await dbConnect()
 
     const { searchParams } = new URL(request.url)
     const saleType = searchParams.get("sale_type")
 
-    let query = supabase.from("private_sales").select("*").eq("user_id", user.id)
-
+    let query: any = { user_id: userId }
     if (saleType) {
-      query = query.eq("sale_type", saleType)
+      query.sale_type = saleType
     }
 
-    const { data, error } = await query.order("created_at", { ascending: false })
+    const privateSales = await PrivateSale.find(query).sort({ created_at: -1 }).lean()
 
-    if (error) throw error
-
-    return NextResponse.json({ data })
+    return NextResponse.json({ data: privateSales })
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to fetch private sales" },
@@ -38,31 +36,22 @@ export async function GET(request: Request) {
 
 export async function POST(request: Request) {
   try {
-    const supabase = await createClient()
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    const userId = (session.user as any).id
+    await dbConnect()
+
     const body = await request.json()
 
-    const { data, error } = await supabase
-      .from("private_sales")
-      .insert([
-        {
-          ...body,
-          user_id: user.id,
-        },
-      ])
-      .select()
+    const privateSale = await PrivateSale.create({
+      ...body,
+      user_id: userId,
+    })
 
-    if (error) throw error
-
-    return NextResponse.json({ data })
+    return NextResponse.json({ data: privateSale })
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to create private sale" },
@@ -73,15 +62,13 @@ export async function POST(request: Request) {
 
 export async function DELETE(request: Request) {
   try {
-    const supabase = await createClient()
-
-    const {
-      data: { user },
-      error: authError,
-    } = await supabase.auth.getUser()
-    if (authError || !user) {
+    const session = await getServerSession(authOptions)
+    if (!session || !session.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
+
+    const userId = (session.user as any).id
+    await dbConnect()
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get("id")
@@ -90,9 +77,7 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: "ID required" }, { status: 400 })
     }
 
-    const { error } = await supabase.from("private_sales").delete().eq("id", id).eq("user_id", user.id)
-
-    if (error) throw error
+    await PrivateSale.findOneAndDelete({ _id: id, user_id: userId })
 
     return NextResponse.json({ success: true })
   } catch (error) {
