@@ -1,5 +1,5 @@
 {
   "framework": "nextjs",
   "buildCommand": "next build",
-  "installCommand": "rm -rf node_modules && rm -f pnpm-lock.yaml && pnpm install"
+  "installCommand": "pnpm install --no-frozen-lockfile"
 }
