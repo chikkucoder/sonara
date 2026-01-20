@@ -29,6 +29,10 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Sale not found" }, { status: 404 })
     }
 
+    // Fetch customer details for address
+    const Customer = (await import('@/lib/models/Customer')).default
+    const customer = await Customer.findById(sale.customer_id).select('address city state pincode business_name contact_person').lean() as any
+
     // Map sale data to bill format
     const billData = {
       invoice_no: sale.invoice_number,
@@ -36,26 +40,33 @@ export async function GET(request: Request) {
       sale_type: sale.customer_type?.toLowerCase() || 'b2c',
       customer_name: sale.customer_name,
       customer_phone: sale.customer_phone,
-      customer_address: '',
-      business_name: sale.customer_name,
-      contact_person: '',
+      customer_address: customer?.address || '',
+      business_name: customer?.business_name || sale.customer_name,
+      contact_person: customer?.contact_person || '',
       gst_no: sale.customer_gst || '',
       business_phone: sale.customer_phone,
-      business_address: '',
+      business_address: customer?.address || '',
       payment_terms: sale.payment_terms,
       due_date: sale.due_date,
       items: sale.items.map((item: any) => ({
         item_name: item.item_name,
+        purity: item.purity,
+        gross_weight: item.gross_weight,
+        weight: item.weight,
         quantity: item.quantity,
         rate: item.base_price / item.quantity || 0,
+        making_charges: item.making_charges,
         amount: item.item_total
       })),
       subtotal: sale.total_base_price,
       discount: sale.total_discount_amount,
       gst: sale.total_gst,
       total: sale.grand_total,
+      amount_paid: sale.amount_paid || 0,
+      amount_pending: sale.amount_pending || 0,
       payment_method: sale.payment_mode,
-      payment_status: sale.payment_status?.toLowerCase() || 'unpaid'
+      payment_status: sale.payment_status || 'UNPAID',
+      warranty_years: sale.warranty_years || 0
     }
 
     // Generate bill HTML
@@ -216,9 +227,13 @@ export async function GET(request: Request) {
     <thead>
       <tr>
         <th>S.No</th>
-        <th>Item Description</th>
-        <th class="text-right">Quantity</th>
+        <th>Item</th>
+        <th class="text-right">Purity</th>
+        <th class="text-right">Gross Wt (g)</th>
+        <th class="text-right">Net Wt (g)</th>
         <th class="text-right">Rate</th>
+        <th class="text-right">Making</th>
+        <th class="text-right">Qty</th>
         <th class="text-right">Amount</th>
       </tr>
     </thead>
@@ -227,8 +242,12 @@ export async function GET(request: Request) {
         <tr>
           <td>${index + 1}</td>
           <td>${item.item_name}</td>
-          <td class="text-right">${item.quantity}</td>
+          <td class="text-right">${item.purity || '-'}</td>
+          <td class="text-right">${item.gross_weight ? item.gross_weight.toFixed(2) : '-'}</td>
+          <td class="text-right">${item.weight ? item.weight.toFixed(2) : '-'}</td>
           <td class="text-right">₹${(item.rate || 0).toLocaleString('en-IN')}</td>
+          <td class="text-right">₹${(item.making_charges || 0).toLocaleString('en-IN')}</td>
+          <td class="text-right">${item.quantity}</td>
           <td class="text-right">₹${(item.amount || 0).toLocaleString('en-IN')}</td>
         </tr>
       `).join('')}
@@ -254,14 +273,32 @@ export async function GET(request: Request) {
       <span>TOTAL:</span>
       <span>₹${(billData.total || 0).toLocaleString('en-IN')}</span>
     </div>
+    ${billData.amount_paid > 0 ? `
+      <div class="total-row" style="color: green;">
+        <span>Amount Paid:</span>
+        <span>₹${(billData.amount_paid || 0).toLocaleString('en-IN')}</span>
+      </div>
+    ` : ''}
+    ${billData.amount_pending > 0 ? `
+      <div class="total-row" style="color: orange;">
+        <span>Amount Pending:</span>
+        <span>₹${(billData.amount_pending || 0).toLocaleString('en-IN')}</span>
+      </div>
+    ` : ''}
     <div class="total-row">
       <span>Payment Method:</span>
       <span>${billData.payment_method ? billData.payment_method.toUpperCase() : (billData.payment_terms === 'immediate' ? 'IMMEDIATE' : 'CREDIT')}</span>
     </div>
     <div class="total-row">
       <span>Payment Status:</span>
-      <span style="color: ${billData.payment_status === 'paid' ? 'green' : 'orange'};">${billData.payment_status.toUpperCase()}</span>
+      <span style="color: ${billData.payment_status === 'PAID' ? 'green' : (billData.payment_status === 'PARTIAL' ? 'orange' : 'red')};">${billData.payment_status ? billData.payment_status.toUpperCase() : 'UNPAID'}</span>
     </div>
+    ${billData.warranty_years > 0 ? `
+      <div class="total-row" style="border-top: 1px dashed #ddd; margin-top: 10px; padding-top: 10px;">
+        <span>Warranty:</span>
+        <span>${billData.warranty_years} ${billData.warranty_years === 1 ? 'Year' : 'Years'}</span>
+      </div>
+    ` : ''}
   </div>
 
   <div class="footer">

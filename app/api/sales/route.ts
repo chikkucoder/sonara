@@ -256,6 +256,17 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   const maxRetries = 3
   
+  // Read the request body once before the retry loop
+  let body: any
+  try {
+    body = await request.json()
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, error: "Invalid request body" },
+      { status: 400 }
+    )
+  }
+  
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     let session_obj: mongoose.ClientSession | null = null
     
@@ -270,8 +281,20 @@ export async function POST(request: Request) {
 
       const userId = (session.user as any).id
       await dbConnect()
-
-      const body = await request.json()
+      
+      // Drop old invoice_no index if it exists (migration)
+      try {
+        const saleCollection = mongoose.connection.collection('sales')
+        const indexes = await saleCollection.indexes()
+        const hasOldIndex = indexes.some((idx: any) => idx.name === 'invoice_no_1')
+        if (hasOldIndex) {
+          await saleCollection.dropIndex('invoice_no_1')
+          console.log('Dropped old invoice_no_1 index')
+        }
+      } catch (indexError) {
+        // Index might not exist, that's okay
+        console.log('No old index to drop or already dropped')
+      }
 
       // Step 1: Validate input data
       const validation = validateSaleData(body)
@@ -409,10 +432,13 @@ export async function POST(request: Request) {
         grand_total: Number(grandTotal.toFixed(2)),
         gst_type: body.gst_type.toUpperCase(),
         payment_mode: body.payment_mode?.toUpperCase() || "CASH",
+        payment_status: body.amount_paid >= grandTotal ? "PAID" : (body.amount_paid > 0 ? "PARTIAL" : "UNPAID"),
         amount_paid: body.amount_paid || 0,
+        amount_pending: Number((grandTotal - (body.amount_paid || 0)).toFixed(2)),
         payment_date: body.amount_paid > 0 ? new Date() : undefined,
         payment_reference: body.payment_reference,
         payment_terms: body.payment_terms,
+        warranty_years: body.warranty_years || 1,
         sale_status: "COMPLETED",
         is_inventory_updated: false,
         notes: body.notes,
