@@ -272,9 +272,9 @@ export default function PurchasePage() {
     const existing = acc.find(s => s.name === purchase.supplier_name)
     if (existing) {
       existing.totalPurchases += 1
-      existing.totalValue += purchase.total_value
+      existing.totalValue += purchase.total_amount
       if (purchase.payment_status === "pending" || purchase.payment_status === "partial") {
-        existing.pendingAmount += purchase.total_value
+        existing.pendingAmount += purchase.total_amount
       }
       if (new Date(purchase.purchase_date) > new Date(existing.lastPurchaseDate)) {
         existing.lastPurchaseDate = purchase.purchase_date
@@ -284,8 +284,8 @@ export default function PurchasePage() {
         name: purchase.supplier_name,
         phone: purchase.supplier_phone,
         totalPurchases: 1,
-        totalValue: purchase.total_value,
-        pendingAmount: (purchase.payment_status === "pending" || purchase.payment_status === "partial") ? purchase.total_value : 0,
+        totalValue: purchase.total_amount,
+        pendingAmount: (purchase.payment_status === "pending" || purchase.payment_status === "partial") ? purchase.total_amount : 0,
         lastPurchaseDate: purchase.purchase_date,
       })
     }
@@ -651,9 +651,9 @@ export default function PurchasePage() {
                       </div>
                     </TableCell>
                     <TableCell>{purchase.quantity}</TableCell>
-                    <TableCell>₹{purchase.rate.toLocaleString("en-IN")}</TableCell>
+                    <TableCell>₹{(purchase.rate_per_unit || 0).toLocaleString("en-IN")}</TableCell>
                     <TableCell className="font-semibold">
-                      ₹{purchase.total_value.toLocaleString("en-IN")}
+                      ₹{(purchase.total_amount || 0).toLocaleString("en-IN")}
                     </TableCell>
                     <TableCell>
                       <Badge variant={purchase.payment_status === "paid" ? "default" : "secondary"}>
@@ -846,9 +846,9 @@ export default function PurchasePage() {
                           </div>
                         </TableCell>
                         <TableCell>{purchase.quantity}</TableCell>
-                        <TableCell>₹{purchase.rate.toLocaleString("en-IN")}</TableCell>
+                        <TableCell>₹{(purchase.rate_per_unit || 0).toLocaleString("en-IN")}</TableCell>
                         <TableCell className="font-semibold">
-                          ₹{purchase.total_value.toLocaleString("en-IN")}
+                          ₹{(purchase.total_amount || 0).toLocaleString("en-IN")}
                         </TableCell>
                         <TableCell>
                           <Badge variant={purchase.payment_status === "paid" ? "default" : "destructive"}>

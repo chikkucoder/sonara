@@ -2,6 +2,7 @@ import { redirect } from "next/navigation"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
 import { UserManagement } from "@/components/super-admin/user-management"
+import { LogoutButton } from "@/components/super-admin/logout-button"
 import { Shield } from "lucide-react"
 import dbConnect from "@/lib/mongodb"
 import User from "@/lib/models/User"
@@ -26,8 +27,8 @@ async function getSuperAdminData() {
 
   // Fetch shop details for each user
   const usersWithShops = await Promise.all(
-    users.map(async (user) => {
-      const shop = await Shop.findOne({ user_id: user._id.toString() }).lean()
+    users.map(async (user: any) => {
+      const shop: any = await Shop.findOne({ user_id: user._id.toString() }).lean()
       return {
         id: user._id.toString(),
         email: user.email,
@@ -38,9 +39,6 @@ async function getSuperAdminData() {
         shop_address: shop?.shop_address || null,
         shop_phone: shop?.shop_phone || null,
         shop_gst: shop?.shop_gst || null,
-        membership_type: user.membership_type || "free",
-        membership_status: user.membership_status || "active",
-        membership_end_date: user.membership_end_date?.toString() || null,
         last_login: user.last_login?.toString() || null,
         created_at: user.created_at?.toString() || new Date().toString(),
       }
@@ -70,14 +68,7 @@ export default async function SuperAdminDashboard() {
               <p className="text-sm text-slate-400">User Management System</p>
             </div>
           </div>
-          <form action="/api/auth/logout" method="POST">
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 transition-colors"
-            >
-              Logout
-            </button>
-          </form>
+          <LogoutButton />
         </div>
       </header>
 

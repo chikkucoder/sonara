@@ -14,8 +14,8 @@ export async function GET() {
 
     // Fetch shop details for each user
     const usersWithShops = await Promise.all(
-      users.map(async (user) => {
-        const shop = await Shop.findOne({ user_id: user._id.toString() }).lean()
+      users.map(async (user: any) => {
+        const shop: any = await Shop.findOne({ user_id: user._id.toString() }).lean()
         return {
           ...user,
           shop_name: shop?.shop_name || null,
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
     // Get form data
     const body = await request.json()
-    const { email, password, full_name, shop_name, shop_address, shop_phone, shop_gst, membership_type } = body
+    const { email, password, full_name, shop_name, shop_address, shop_phone, shop_gst } = body
 
     // Validate required fields
     if (!email || !password || !full_name || !shop_name || !shop_address || !shop_phone) {
@@ -56,16 +56,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "User with this email already exists" }, { status: 400 })
     }
 
-    // Set membership limits based on type
-    const membershipLimits: any = {
-      free: { max_inventory: 100, max_users: 1 },
-      basic: { max_inventory: 500, max_users: 3 },
-      premium: { max_inventory: 2000, max_users: 10 },
-      enterprise: { max_inventory: 999999, max_users: 999 },
-    }
-
-    const limits = membershipLimits[membership_type || "free"]
-
     // Create new user in MongoDB
     const newUser = await User.create({
       email: email.toLowerCase(),
@@ -74,12 +64,6 @@ export async function POST(request: Request) {
       role: "user",
       enabled: true,
       shop_id: shop_name,
-      membership_type: membership_type || "free",
-      membership_status: "active",
-      membership_start_date: new Date(),
-      membership_end_date: membership_type === "free" ? null : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000),
-      max_inventory: limits.max_inventory,
-      max_users: limits.max_users,
       features_enabled: ["inventory", "sales", "reports", "purchase"],
     })
 
@@ -117,7 +101,7 @@ export async function PUT(request: Request) {
 
     // Get update data
     const body = await request.json()
-    const { userId, enabled, membership_type } = body
+    const { userId, enabled } = body
 
     if (!userId) {
       return NextResponse.json({ error: "Missing user ID" }, { status: 400 })
@@ -128,26 +112,6 @@ export async function PUT(request: Request) {
     // Update enabled status if provided
     if (enabled !== undefined) {
       updateData.enabled = enabled
-    }
-
-    // Update membership if provided
-    if (membership_type) {
-      const membershipLimits: any = {
-        free: { max_inventory: 100, max_users: 1 },
-        basic: { max_inventory: 500, max_users: 3 },
-        premium: { max_inventory: 2000, max_users: 10 },
-        enterprise: { max_inventory: 999999, max_users: 999 },
-      }
-
-      const limits = membershipLimits[membership_type]
-      updateData.membership_type = membership_type
-      updateData.membership_status = "active"
-      updateData.max_inventory = limits.max_inventory
-      updateData.max_users = limits.max_users
-      
-      if (membership_type !== "free") {
-        updateData.membership_end_date = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
-      }
     }
 
     // Update user
@@ -162,10 +126,6 @@ export async function PUT(request: Request) {
     console.error("Update user error:", error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Failed to update user" },
-      { status: 500 }
-    )
-  }
-}
       { status: 500 }
     )
   }
