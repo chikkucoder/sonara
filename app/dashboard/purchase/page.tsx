@@ -81,9 +81,14 @@ export default function PurchasePage() {
     supplier_phone: "",
     supplier_address: "",
     supplier_gst: "",
+    supplier_type: "",
     item_name: "",
     category: "",
+    item_type: "",
+    metal_type: "",
     weight: "",
+    gross_weight: "",
+    net_weight: "",
     purity: "",
     quantity: "1",
     rate: "",
@@ -92,6 +97,9 @@ export default function PurchasePage() {
     invoice_no: "",
     payment_mode: "cash",
     payment_status: "paid",
+    due_amount: "",
+    due_date: "",
+    attachment: null as File | null,
     location: "",
     notes: "",
   })
@@ -224,6 +232,69 @@ export default function PurchasePage() {
     }
   }
 
+  const handleEditPurchase = async () => {
+    if (!editingPurchase) return
+
+    const purchaseId = editingPurchase._id || editingPurchase.id
+    
+    if (!purchaseId) {
+      toast({
+        title: "Error",
+        description: "Purchase ID is missing. Cannot update.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      const purchasePayload = {
+        id: purchaseId,
+        payment_status: formData.payment_status,
+        payment_mode: formData.payment_mode,
+        amount_paid: formData.payment_status === "PAID" ? parseFloat(formData.total_value) : (parseFloat(formData.due_amount) || 0),
+        payment_date: formData.purchase_date,
+        notes: formData.notes,
+        location: formData.location,
+        invoice_number: formData.invoice_no,
+      }
+
+      const response = await fetch(`/api/purchase`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(purchasePayload),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        toast({
+          title: "Update Error",
+          description: data.error || "Failed to update purchase",
+          variant: "destructive",
+        })
+        return
+      }
+
+      toast({
+        title: "Success",
+        description: "Purchase updated successfully!",
+      })
+      setIsEditDialogOpen(false)
+      setEditingPurchase(null)
+      resetForm()
+      fetchPurchases()
+    } catch (error) {
+      console.error("Update purchase error:", error)
+      toast({
+        title: "Error",
+        description: "Failed to update purchase. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const fetchPurchases = async () => {
     try {
       const response = await fetch("/api/purchase")
@@ -236,15 +307,55 @@ export default function PurchasePage() {
     }
   }
 
+  const openEditDialog = (purchase: any) => {
+    console.log("Opening edit dialog with purchase:", purchase)
+    console.log("Purchase ID:", purchase._id || purchase.id)
+    
+    setEditingPurchase(purchase)
+    setFormData({
+      supplier_name: purchase.supplier_name || "",
+      supplier_phone: purchase.supplier_phone || "",
+      supplier_address: purchase.supplier_address || "",
+      supplier_gst: purchase.supplier_gst || "",
+      supplier_type: purchase.supplier_type || "",
+      item_name: purchase.item_name || "",
+      category: purchase.category || "",
+      item_type: purchase.item_type || "",
+      metal_type: purchase.metal_type || "",
+      weight: purchase.weight?.toString() || "",
+      gross_weight: purchase.gross_weight?.toString() || "",
+      net_weight: purchase.net_weight?.toString() || "",
+      purity: purchase.purity || "",
+      quantity: purchase.quantity?.toString() || "1",
+      rate: (purchase.rate_per_unit || purchase.rate)?.toString() || "",
+      total_value: (purchase.total_value || purchase.subtotal || 0).toString(),
+      purchase_date: purchase.purchase_date ? new Date(purchase.purchase_date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+      invoice_no: purchase.invoice_number || purchase.invoice_no || "",
+      payment_mode: purchase.payment_mode?.toLowerCase() || "cash",
+      payment_status: purchase.payment_status || "paid",
+      due_amount: purchase.due_amount?.toString() || "",
+      due_date: purchase.due_date ? new Date(purchase.due_date).toISOString().split('T')[0] : "",
+      attachment: null,
+      location: purchase.location || "",
+      notes: purchase.notes || "",
+    })
+    setIsEditDialogOpen(true)
+  }
+
   const resetForm = () => {
     setFormData({
       supplier_name: "",
       supplier_phone: "",
       supplier_address: "",
       supplier_gst: "",
+      supplier_type: "",
       item_name: "",
       category: "",
+      item_type: "",
+      metal_type: "",
       weight: "",
+      gross_weight: "",
+      net_weight: "",
       purity: "",
       quantity: "1",
       rate: "",
@@ -253,6 +364,9 @@ export default function PurchasePage() {
       invoice_no: "",
       payment_mode: "cash",
       payment_status: "paid",
+      due_amount: "",
+      due_date: "",
+      attachment: null,
       location: "",
       notes: "",
     })
@@ -269,12 +383,13 @@ export default function PurchasePage() {
 
   // Calculate supplier stats
   const supplierStats: SupplierStats[] = purchases.reduce((acc, purchase) => {
+    const purchaseValue = purchase.total_value || purchase.subtotal || 0
     const existing = acc.find(s => s.name === purchase.supplier_name)
     if (existing) {
       existing.totalPurchases += 1
-      existing.totalValue += purchase.total_value
+      existing.totalValue += purchaseValue
       if (purchase.payment_status === "pending" || purchase.payment_status === "partial") {
-        existing.pendingAmount += purchase.total_value
+        existing.pendingAmount += purchaseValue
       }
       if (new Date(purchase.purchase_date) > new Date(existing.lastPurchaseDate)) {
         existing.lastPurchaseDate = purchase.purchase_date
@@ -284,8 +399,8 @@ export default function PurchasePage() {
         name: purchase.supplier_name,
         phone: purchase.supplier_phone,
         totalPurchases: 1,
-        totalValue: purchase.total_value,
-        pendingAmount: (purchase.payment_status === "pending" || purchase.payment_status === "partial") ? purchase.total_value : 0,
+        totalValue: purchaseValue,
+        pendingAmount: (purchase.payment_status === "pending" || purchase.payment_status === "partial") ? purchaseValue : 0,
         lastPurchaseDate: purchase.purchase_date,
       })
     }
@@ -410,6 +525,19 @@ export default function PurchasePage() {
                           className="border-2"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="supplier_type">Supplier Type</Label>
+                        <Select value={formData.supplier_type} onValueChange={(v) => handleInputChange("supplier_type", v)}>
+                          <SelectTrigger id="supplier_type" className="border-2">
+                            <SelectValue placeholder="Select supplier type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="SUPPLIER">SUPPLIER</SelectItem>
+                            <SelectItem value="WHOLESALER">WHOLESALER</SelectItem>
+                            <SelectItem value="KARIGAR">KARIGAR</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                   </div>
 
@@ -450,15 +578,30 @@ export default function PurchasePage() {
                         </Select>
                       </div>
                       <div className="space-y-2">
-                        <Label htmlFor="weight">Weight (grams)</Label>
-                        <Input
-                          id="weight"
-                          type="number"
-                          value={formData.weight}
-                          onChange={(e) => handleInputChange("weight", e.target.value)}
-                          placeholder="Enter weight"
-                          className="border-2"
-                        />
+                        <Label htmlFor="item_type">Item Type</Label>
+                        <Select value={formData.item_type} onValueChange={(v) => handleInputChange("item_type", v)}>
+                          <SelectTrigger id="item_type" className="border-2">
+                            <SelectValue placeholder="Select item type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="RAW">RAW</SelectItem>
+                            <SelectItem value="JEWELLERY">JEWELLERY</SelectItem>
+                            <SelectItem value="JOBWORK">JOBWORK</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="metal_type">Metal Type</Label>
+                        <Select value={formData.metal_type} onValueChange={(v) => handleInputChange("metal_type", v)}>
+                          <SelectTrigger id="metal_type" className="border-2">
+                            <SelectValue placeholder="Select metal type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Gold">Gold</SelectItem>
+                            <SelectItem value="Silver">Silver</SelectItem>
+                            <SelectItem value="Diamond">Diamond</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="purity">Purity</Label>
@@ -476,6 +619,30 @@ export default function PurchasePage() {
                         </Select>
                       </div>
                       <div className="space-y-2">
+                        <Label htmlFor="gross_weight">Gross Weight (grams)</Label>
+                        <Input
+                          id="gross_weight"
+                          type="number"
+                          step="0.001"
+                          value={formData.gross_weight}
+                          onChange={(e) => handleInputChange("gross_weight", e.target.value)}
+                          placeholder="Enter gross weight"
+                          className="border-2"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="net_weight">Net Weight (grams)</Label>
+                        <Input
+                          id="net_weight"
+                          type="number"
+                          step="0.001"
+                          value={formData.net_weight}
+                          onChange={(e) => handleInputChange("net_weight", e.target.value)}
+                          placeholder="Enter net weight"
+                          className="border-2"
+                        />
+                      </div>
+                      <div className="space-y-2">
                         <Label htmlFor="quantity" className="flex items-center gap-1">
                           Quantity <span className="text-red-500">*</span>
                         </Label>
@@ -491,15 +658,16 @@ export default function PurchasePage() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="rate" className="flex items-center gap-1">
-                          Rate per unit (₹) <span className="text-red-500">*</span>
+                          Rate per gram (₹) <span className="text-red-500">*</span>
                         </Label>
                         <Input
                           id="rate"
                           type="number"
                           min="0"
+                          step="0.01"
                           value={formData.rate}
                           onChange={(e) => handleInputChange("rate", e.target.value)}
-                          placeholder="Enter rate"
+                          placeholder="Enter rate per gram"
                           className="border-2"
                         />
                       </div>
@@ -575,6 +743,45 @@ export default function PurchasePage() {
                           className="border-2"
                         />
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="due_amount">Due Amount (₹)</Label>
+                        <Input
+                          id="due_amount"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.due_amount}
+                          onChange={(e) => handleInputChange("due_amount", e.target.value)}
+                          placeholder="Enter due amount"
+                          className="border-2"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="due_date">Due Date</Label>
+                        <Input
+                          id="due_date"
+                          type="date"
+                          value={formData.due_date}
+                          onChange={(e) => handleInputChange("due_date", e.target.value)}
+                          className="border-2"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="attachment">Attachment (Bill/Invoice)</Label>
+                        <Input
+                          id="attachment"
+                          type="file"
+                          accept="image/*,.pdf"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0] || null
+                            setFormData({ ...formData, attachment: file })
+                          }}
+                          className="border-2"
+                        />
+                        {formData.attachment && (
+                          <p className="text-xs text-muted-foreground">Selected: {formData.attachment.name}</p>
+                        )}
+                      </div>
                       <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="notes">Notes</Label>
                         <Textarea
@@ -597,6 +804,154 @@ export default function PurchasePage() {
                   <Button onClick={handleAddPurchase}>
                     <Plus className="h-4 w-4 mr-2" />
                     Add Purchase & Update Inventory
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
+            {/* Edit Purchase Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle className="font-serif text-2xl flex items-center gap-2">
+                    <Edit className="h-6 w-6" />
+                    Edit Purchase
+                  </DialogTitle>
+                </DialogHeader>
+
+                <div className="space-y-6 py-4">
+                  {/* Supplier Information */}
+                  <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                    <h3 className="font-semibold flex items-center gap-2 text-primary text-lg">
+                      <User className="h-5 w-5" />
+                      Supplier Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_supplier_name">Supplier Name</Label>
+                        <Input
+                          id="edit_supplier_name"
+                          value={formData.supplier_name}
+                          onChange={(e) => handleInputChange("supplier_name", e.target.value)}
+                          placeholder="Enter supplier name"
+                          className="border-2"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_supplier_phone">Supplier Phone</Label>
+                        <Input
+                          id="edit_supplier_phone"
+                          value={formData.supplier_phone}
+                          onChange={(e) => handleInputChange("supplier_phone", e.target.value)}
+                          placeholder="10-digit phone number"
+                          maxLength={10}
+                          className="border-2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Payment Information */}
+                  <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+                    <h3 className="font-semibold flex items-center gap-2 text-primary text-lg">
+                      <IndianRupee className="h-5 w-5" />
+                      Payment Information
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_payment_status" className="flex items-center gap-1">
+                          Payment Status <span className="text-red-500">*</span>
+                        </Label>
+                        <Select value={formData.payment_status} onValueChange={(v) => handleInputChange("payment_status", v)}>
+                          <SelectTrigger id="edit_payment_status" className="border-2">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="PAID">Paid</SelectItem>
+                            <SelectItem value="UNPAID">Unpaid</SelectItem>
+                            <SelectItem value="PARTIAL">Partial</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_payment_mode">Payment Mode</Label>
+                        <Select value={formData.payment_mode} onValueChange={(v) => handleInputChange("payment_mode", v)}>
+                          <SelectTrigger id="edit_payment_mode" className="border-2">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="cash">Cash</SelectItem>
+                            <SelectItem value="card">Card</SelectItem>
+                            <SelectItem value="upi">UPI</SelectItem>
+                            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                            <SelectItem value="cheque">Cheque</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_due_amount">Due Amount (₹)</Label>
+                        <Input
+                          id="edit_due_amount"
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          value={formData.due_amount}
+                          onChange={(e) => handleInputChange("due_amount", e.target.value)}
+                          placeholder="Enter due amount"
+                          className="border-2"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit_due_date">Due Date</Label>
+                        <Input
+                          id="edit_due_date"
+                          type="date"
+                          value={formData.due_date}
+                          onChange={(e) => handleInputChange("due_date", e.target.value)}
+                          className="border-2"
+                        />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="edit_notes">Notes</Label>
+                        <Textarea
+                          id="edit_notes"
+                          value={formData.notes}
+                          onChange={(e) => handleInputChange("notes", e.target.value)}
+                          placeholder="Any additional notes..."
+                          rows={2}
+                          className="border-2"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Current Purchase Details */}
+                  <div className="space-y-4 p-4 border rounded-lg bg-blue-50">
+                    <h3 className="font-semibold text-lg">Current Purchase Details</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-muted-foreground">Item</p>
+                        <p className="font-medium">{formData.item_name}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Total Amount</p>
+                        <p className="font-medium">₹{formData.total_value}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter className="mt-6">
+                  <Button variant="outline" onClick={() => {
+                    setIsEditDialogOpen(false)
+                    setEditingPurchase(null)
+                    resetForm()
+                  }}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleEditPurchase}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Update Purchase
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -646,14 +1001,14 @@ export default function PurchasePage() {
                       <div>
                         <p className="font-medium">{purchase.item_name}</p>
                         <p className="text-xs text-muted-foreground">
-                          {purchase.category} • {purchase.purity} • {purchase.weight}g
+                          {purchase.category} • {purchase.purity} • {purchase.weight || 0}g
                         </p>
                       </div>
                     </TableCell>
-                    <TableCell>{purchase.quantity}</TableCell>
-                    <TableCell>₹{purchase.rate.toLocaleString("en-IN")}</TableCell>
+                    <TableCell>{purchase.quantity || 0}</TableCell>
+                    <TableCell>₹{(purchase.rate_per_unit || purchase.rate || 0).toLocaleString("en-IN")}</TableCell>
                     <TableCell className="font-semibold">
-                      ₹{purchase.total_value.toLocaleString("en-IN")}
+                      ₹{(purchase.total_value || purchase.subtotal || 0).toLocaleString("en-IN")}
                     </TableCell>
                     <TableCell>
                       <Badge variant={purchase.payment_status === "paid" ? "default" : "secondary"}>
@@ -662,7 +1017,11 @@ export default function PurchasePage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openEditDialog(purchase)}
+                        >
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="icon">
@@ -715,15 +1074,15 @@ export default function PurchasePage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{supplier.totalPurchases}</Badge>
+                            <Badge variant="outline">{supplier.totalPurchases || 0}</Badge>
                           </TableCell>
                           <TableCell className="font-semibold">
-                            ₹{supplier.totalValue.toLocaleString("en-IN")}
+                            ₹{(supplier.totalValue || 0).toLocaleString("en-IN")}
                           </TableCell>
                           <TableCell>
-                            {supplier.pendingAmount > 0 ? (
+                            {(supplier.pendingAmount || 0) > 0 ? (
                               <Badge variant="destructive">
-                                ₹{supplier.pendingAmount.toLocaleString("en-IN")}
+                                ₹{(supplier.pendingAmount || 0).toLocaleString("en-IN")}
                               </Badge>
                             ) : (
                               <Badge className="bg-green-100 text-green-700">Cleared</Badge>
@@ -793,7 +1152,7 @@ export default function PurchasePage() {
                     <div>
                       <p className="text-sm text-muted-foreground">Total Value</p>
                       <p className="text-2xl font-bold">
-                        ₹{supplierPurchases.reduce((acc, p) => acc + p.total_value, 0).toLocaleString("en-IN")}
+                        ₹{supplierPurchases.reduce((acc, p) => acc + (p.total_value || p.subtotal || 0), 0).toLocaleString("en-IN")}
                       </p>
                     </div>
                   </div>
@@ -808,7 +1167,7 @@ export default function PurchasePage() {
                     <div>
                       <p className="text-sm text-muted-foreground">Pending Dues</p>
                       <p className="text-2xl font-bold">
-                        ₹{supplierPurchases.filter(p => p.payment_status === "pending" || p.payment_status === "partial").reduce((acc, p) => acc + p.total_value, 0).toLocaleString("en-IN")}
+                        ₹{supplierPurchases.filter(p => p.payment_status === "pending" || p.payment_status === "partial").reduce((acc, p) => acc + (p.total_value || p.subtotal || 0), 0).toLocaleString("en-IN")}
                       </p>
                     </div>
                   </div>
@@ -841,14 +1200,14 @@ export default function PurchasePage() {
                           <div>
                             <p className="font-medium">{purchase.item_name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {purchase.category} • {purchase.purity} • {purchase.weight}g
+                              {purchase.category} • {purchase.purity} • {purchase.weight || 0}g
                             </p>
                           </div>
                         </TableCell>
-                        <TableCell>{purchase.quantity}</TableCell>
-                        <TableCell>₹{purchase.rate.toLocaleString("en-IN")}</TableCell>
+                        <TableCell>{purchase.quantity || 0}</TableCell>
+                        <TableCell>₹{(purchase.rate_per_unit || purchase.rate || 0).toLocaleString("en-IN")}</TableCell>
                         <TableCell className="font-semibold">
-                          ₹{purchase.total_value.toLocaleString("en-IN")}
+                          ₹{(purchase.total_value || purchase.subtotal || 0).toLocaleString("en-IN")}
                         </TableCell>
                         <TableCell>
                           <Badge variant={purchase.payment_status === "paid" ? "default" : "destructive"}>

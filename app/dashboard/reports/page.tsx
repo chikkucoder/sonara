@@ -101,7 +101,9 @@ export default function ReportsPage() {
 
   // Dues
   const pendingGirvi = girvi.filter((g) => g.status === "active")
-  const totalDues = pendingGirvi.reduce((sum, g) => sum + (g.amount || 0), 0)
+  const girviDues = pendingGirvi.reduce((sum, g) => sum + (g.amount || 0), 0)
+  const salesDues = sales.reduce((sum, s) => sum + (s.amount_pending || 0), 0)
+  const totalDues = girviDues + salesDues
 
   // All transactions combined
   const allTransactions = [
@@ -340,7 +342,9 @@ export default function ReportsPage() {
                 <div>
                   <p className="text-sm text-muted-foreground">Total Dues</p>
                   <p className="text-2xl font-bold">{formatCurrency(totalDues)}</p>
-                  <p className="text-xs text-muted-foreground">{pendingGirvi.length} pending</p>
+                  <p className="text-xs text-muted-foreground">
+                    Sales: {formatCurrency(salesDues)} | Girvi: {formatCurrency(girviDues)}
+                  </p>
                 </div>
               </CardContent>
             </Card>

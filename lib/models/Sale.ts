@@ -107,6 +107,9 @@ export interface ISale extends mongoose.Document {
   sale_status: "COMPLETED" | "PENDING" | "CANCELLED"
   is_inventory_updated: boolean
   
+  // Warranty
+  warranty_years?: number
+  
   // Notes
   notes?: string
   
@@ -379,6 +382,12 @@ const SaleSchema = new mongoose.Schema<ISale>(
     is_inventory_updated: {
       type: Boolean,
       default: false,
+    },
+    warranty_years: {
+      type: Number,
+      default: 1,
+      min: [0, "Warranty cannot be negative"],
+      max: [10, "Warranty cannot exceed 10 years"],
     },
     notes: {
       type: String,

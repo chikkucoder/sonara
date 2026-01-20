@@ -76,6 +76,10 @@ export default function SalesPage() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [discount, setDiscount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [warranty, setWarranty] = useState("1")
+  const [paidAmount, setPaidAmount] = useState("")
+  const [duesAmount, setDuesAmount] = useState("")
+  const [paymentStatus, setPaymentStatus] = useState<"PAID" | "PARTIAL" | "UNPAID">("PAID")
 
   // B2C Customer Details
   const [b2cCustomer, setB2CCustomer] = useState<CustomerDetails>({
@@ -223,15 +227,17 @@ export default function SalesPage() {
           item_name: item.item_name,
           quantity: item.cartQuantity,
           weight: item.weight || 0,
-          gold_rate: item.rate,
+          gold_rate: 0,
           making_charges: 0,
           stone_charges: 0,
+          base_price: item.rate || 0,
           discount_percentage: discount,
           gst_rate: 3,
         })),
         gst_type: "INTRASTATE",
         payment_mode: b2cPaymentMethod.toUpperCase(),
-        amount_paid: total,
+        amount_paid: paymentStatus === "PAID" ? total : (parseFloat(paidAmount) || 0),
+        warranty_years: parseInt(warranty) || 1,
       }
 
       const response = await fetch("/api/sales", {
@@ -268,6 +274,10 @@ export default function SalesPage() {
       setCart([])
       setB2CCustomer({ name: "", phone: "", address: "" })
       setDiscount(0)
+      setWarranty("1")
+      setPaidAmount("")
+      setDuesAmount("")
+      setPaymentStatus("PAID")
       fetchProducts()
     } catch (error) {
       console.error("Sale error:", error)
@@ -313,15 +323,17 @@ export default function SalesPage() {
           item_name: item.item_name,
           quantity: item.cartQuantity,
           weight: item.weight || 0,
-          gold_rate: item.rate,
+          gold_rate: 0,
           making_charges: 0,
           stone_charges: 0,
+          base_price: item.rate || 0,
           discount_percentage: discount,
           gst_rate: 3,
         })),
         gst_type: "INTRASTATE",
         payment_mode: "CREDIT",
         amount_paid: 0,
+        warranty_years: parseInt(warranty) || 1,
       }
 
       const response = await fetch("/api/sales", {
@@ -642,6 +654,64 @@ export default function SalesPage() {
                           </SelectItem>
                         </SelectContent>
                       </Select>
+                    </div>
+                    <div>
+                      <Label className="text-sm">Payment Status</Label>
+                      <Select value={paymentStatus} onValueChange={(v: any) => setPaymentStatus(v)}>
+                        <SelectTrigger className="mt-1">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PAID">Paid (Full)</SelectItem>
+                          <SelectItem value="PARTIAL">Partial Payment</SelectItem>
+                          <SelectItem value="UNPAID">Unpaid (Dues)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {(paymentStatus === "PARTIAL" || paymentStatus === "UNPAID") && (
+                      <div className="space-y-2">
+                        <div>
+                          <Label className="text-sm">Dues Amount (₹)</Label>
+                          <Input
+                            type="number"
+                            value={duesAmount}
+                            onChange={(e) => {
+                              setDuesAmount(e.target.value)
+                              const dues = parseFloat(e.target.value) || 0
+                              const paid = Math.max(0, total - dues)
+                              setPaidAmount(paid.toString())
+                            }}
+                            placeholder="Enter dues amount"
+                            className="mt-1"
+                          />
+                        </div>
+                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-md">
+                          <p className="text-sm font-semibold text-orange-700">
+                            Total Bill: {formatCurrency(total)}
+                          </p>
+                          <p className="text-sm font-bold text-red-600 mt-1">
+                            Dues Amount: {formatCurrency(parseFloat(duesAmount) || 0)}
+                          </p>
+                          <p className="text-sm text-green-600">
+                            Paid: {formatCurrency(total - (parseFloat(duesAmount) || 0))}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    <div>
+                      <Label className="text-sm">Warranty (Years)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        max="10"
+                        value={warranty}
+                        onChange={(e) => setWarranty(e.target.value)}
+                        placeholder="Enter warranty years (0-10)"
+                        className="mt-1"
+                      />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter 0 for no warranty
+                      </p>
                     </div>
                     <Button onClick={handleB2CSale} className="w-full mt-4" disabled={cart.length === 0}>
                       Complete Sale

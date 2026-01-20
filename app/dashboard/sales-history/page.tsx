@@ -46,12 +46,15 @@ interface Sale {
   discount: number
   gst: number
   total: number
+  amount_paid?: number
+  amount_pending?: number
   payment_method?: string
   payment_terms?: string
   payment_status: string
   sale_date: string
   due_date?: string
   status: string
+  warranty_years?: number
 }
 
 const formatCurrency = (amount: number) => {
@@ -244,6 +247,8 @@ export default function SalesHistoryPage() {
                     <TableHead>Amount</TableHead>
                     <TableHead>GST</TableHead>
                     <TableHead>Total</TableHead>
+                    <TableHead>Paid</TableHead>
+                    <TableHead>Dues</TableHead>
                     <TableHead>Payment</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead>Status</TableHead>
@@ -253,11 +258,11 @@ export default function SalesHistoryPage() {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8">Loading sales...</TableCell>
+                      <TableCell colSpan={12} className="text-center py-8">Loading sales...</TableCell>
                     </TableRow>
                   ) : filteredB2CSales.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
                         No B2C sales found
                       </TableCell>
                     </TableRow>
@@ -283,6 +288,12 @@ export default function SalesHistoryPage() {
                         <TableCell>{formatCurrency(sale.subtotal)}</TableCell>
                         <TableCell>{formatCurrency(sale.gst)}</TableCell>
                         <TableCell className="font-bold">{formatCurrency(sale.total)}</TableCell>
+                        <TableCell className="text-green-600 font-semibold">
+                          {formatCurrency(sale.amount_paid || 0)}
+                        </TableCell>
+                        <TableCell className={sale.amount_pending && sale.amount_pending > 0 ? "text-red-600 font-semibold" : ""}>
+                          {sale.amount_pending && sale.amount_pending > 0 ? formatCurrency(sale.amount_pending) : "-"}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="flex items-center gap-1 w-fit">
                             {getPaymentIcon(sale.payment_method || "cash")}
@@ -292,14 +303,22 @@ export default function SalesHistoryPage() {
                         <TableCell>{formatDate(sale.sale_date)}</TableCell>
                         <TableCell>
                           <Badge
-                            variant={sale.payment_status === "paid" ? "default" : "secondary"}
+                            variant={
+                              sale.payment_status === "PAID" || sale.payment_status === "paid" 
+                                ? "default" 
+                                : sale.payment_status === "PARTIAL"
+                                ? "outline"
+                                : "secondary"
+                            }
                             className={
-                              sale.payment_status === "paid"
+                              sale.payment_status === "PAID" || sale.payment_status === "paid"
                                 ? "bg-green-100 text-green-700"
-                                : "bg-yellow-100 text-yellow-700"
+                                : sale.payment_status === "PARTIAL"
+                                ? "bg-orange-100 text-orange-700 border-orange-300"
+                                : "bg-red-100 text-red-700"
                             }
                           >
-                            {sale.payment_status}
+                            {sale.payment_status.toUpperCase()}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -414,6 +433,8 @@ export default function SalesHistoryPage() {
                     <TableHead>Business</TableHead>
                     <TableHead>Items</TableHead>
                     <TableHead>Total</TableHead>
+                    <TableHead>Paid</TableHead>
+                    <TableHead>Dues</TableHead>
                     <TableHead>Payment Terms</TableHead>
                     <TableHead>Due Date</TableHead>
                     <TableHead>Status</TableHead>
@@ -423,11 +444,11 @@ export default function SalesHistoryPage() {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">Loading sales...</TableCell>
+                      <TableCell colSpan={10} className="text-center py-8">Loading sales...</TableCell>
                     </TableRow>
                   ) : filteredB2BSales.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={10} className="text-center py-8 text-muted-foreground">
                         No B2B sales found
                       </TableCell>
                     </TableRow>
@@ -451,6 +472,12 @@ export default function SalesHistoryPage() {
                           </div>
                         </TableCell>
                         <TableCell className="font-bold">{formatCurrency(sale.total)}</TableCell>
+                        <TableCell className="text-green-600 font-semibold">
+                          {formatCurrency(sale.amount_paid || 0)}
+                        </TableCell>
+                        <TableCell className={sale.amount_pending && sale.amount_pending > 0 ? "text-red-600 font-semibold" : ""}>
+                          {sale.amount_pending && sale.amount_pending > 0 ? formatCurrency(sale.amount_pending) : "-"}
+                        </TableCell>
                       <TableCell>
                         <Badge variant="outline">
                           {sale.payment_terms === "immediate" ? "Immediate" : sale.payment_terms}
@@ -459,15 +486,24 @@ export default function SalesHistoryPage() {
                       <TableCell>{sale.due_date ? formatDate(sale.due_date) : "-"}</TableCell>
                       <TableCell>
                         <Badge
+                          variant={
+                            sale.payment_status === "PAID" || sale.payment_status === "paid" 
+                              ? "default" 
+                              : sale.payment_status === "PARTIAL"
+                              ? "outline"
+                              : "secondary"
+                          }
                           className={
-                            sale.payment_status === "paid"
+                            sale.payment_status === "PAID" || sale.payment_status === "paid"
                               ? "bg-green-100 text-green-700"
+                              : sale.payment_status === "PARTIAL"
+                              ? "bg-orange-100 text-orange-700 border-orange-300"
                               : sale.payment_status === "pending"
                                 ? "bg-yellow-100 text-yellow-700"
                                 : "bg-red-100 text-red-700"
                           }
                         >
-                          {sale.payment_status}
+                          {sale.payment_status.toUpperCase()}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -562,6 +598,24 @@ export default function SalesHistoryPage() {
                   <span>Total:</span>
                   <span>{formatCurrency(selectedSale.total)}</span>
                 </div>
+                {selectedSale.amount_paid !== undefined && (
+                  <div className="flex justify-between text-sm text-green-600 font-semibold">
+                    <span>Amount Paid:</span>
+                    <span>{formatCurrency(selectedSale.amount_paid)}</span>
+                  </div>
+                )}
+                {selectedSale.amount_pending && selectedSale.amount_pending > 0 && (
+                  <div className="flex justify-between text-sm text-red-600 font-bold border-t pt-2">
+                    <span>Dues Amount:</span>
+                    <span>{formatCurrency(selectedSale.amount_pending)}</span>
+                  </div>
+                )}
+                {selectedSale.warranty_years && selectedSale.warranty_years > 0 && (
+                  <div className="flex justify-between text-sm text-blue-600">
+                    <span>Warranty:</span>
+                    <span>{selectedSale.warranty_years} {selectedSale.warranty_years === 1 ? 'Year' : 'Years'}</span>
+                  </div>
+                )}
               </div>
             </div>
           </DialogContent>
