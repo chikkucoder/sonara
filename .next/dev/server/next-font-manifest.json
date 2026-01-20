@@ -1,10 +1,10 @@
 {
   "app": {
-    "[project]/app/dashboard/inventory/page": [
+    "[project]/app/about/page": [
       "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
     ],
-    "[project]/app/dashboard/page": [
+    "[project]/app/contact/page": [
       "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
     ],
@@ -12,19 +12,11 @@
       "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
     ],
-    "[project]/app/dashboard/reports/page": [
+    "[project]/app/login/page": [
       "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
     ],
-    "[project]/app/dashboard/sales-history/page": [
-      "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
-      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
-    ],
-    "[project]/app/dashboard/sales/page": [
-      "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
-      "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
-    ],
-    "[project]/app/dashboard/settings/page": [
+    "[project]/app/page": [
       "static/media/2a65768255d6b625-s.p.d19752fb.woff2",
       "static/media/83afe278b6a6bb3c-s.p.3a6ba036.woff2"
     ]
