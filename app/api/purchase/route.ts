@@ -454,6 +454,7 @@ export async function PUT(request: Request) {
     const allowedUpdates = [
       "amount_paid",
       "payment_mode",
+      "payment_status",
       "payment_reference",
       "payment_date",
       "notes",
@@ -471,6 +472,22 @@ export async function PUT(request: Request) {
     // If payment date is provided, convert to Date
     if (sanitizedUpdate.payment_date) {
       sanitizedUpdate.payment_date = new Date(sanitizedUpdate.payment_date)
+    }
+
+    // Ensure payment_status is valid
+    if (sanitizedUpdate.payment_status) {
+      const validStatuses = ["PAID", "UNPAID", "PARTIAL"]
+      const upperStatus = sanitizedUpdate.payment_status.toUpperCase()
+      if (!validStatuses.includes(upperStatus)) {
+        sanitizedUpdate.payment_status = "UNPAID"
+      } else {
+        sanitizedUpdate.payment_status = upperStatus
+      }
+    }
+
+    // Ensure payment_mode is uppercase
+    if (sanitizedUpdate.payment_mode) {
+      sanitizedUpdate.payment_mode = sanitizedUpdate.payment_mode.toUpperCase()
     }
 
     const purchase = await Purchase.findOneAndUpdate(
