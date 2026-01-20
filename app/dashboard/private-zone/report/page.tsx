@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Diamond, Gavel, FileBarChart, ArrowLeft, TrendingUp, Package, Banknote, Download } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 // Hidden sidebar for private zone
 const privateNavigation = [
@@ -83,85 +84,78 @@ function PrivateSidebar() {
 }
 
 interface PrivateSale {
-  id: string
-  type: "girvi" | "most-private"
-  itemName: string
-  customerName: string
-  salePrice: number
-  date: string
-  paymentMethod: string
+  _id: string
+  sale_type: "girvi" | "most-private"
+  item_name: string
+  customer_name?: string
+  total_amount: number
+  sale_date: string
+  payment_mode: string
+}
+
+interface Statistics {
+  totalSales: number
+  totalTransactions: number
+  girviSales: {
+    total: number
+    count: number
+  }
+  mostPrivateSales: {
+    total: number
+    count: number
+  }
 }
 
 export default function PrivateSaleReportPage() {
   const [startDate, setStartDate] = useState("2024-01-01")
   const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0])
   const [filterType, setFilterType] = useState<"all" | "girvi" | "most-private">("all")
+  const [loading, setLoading] = useState(false)
+  const { toast } = useToast()
 
-  // Sample private sales data
-  const [allSales] = useState<PrivateSale[]>([
-    {
-      id: "PS001",
-      type: "girvi",
-      itemName: "Gold Kada",
-      customerName: "Cash Customer",
-      salePrice: 180000,
-      date: "2024-01-10",
-      paymentMethod: "Cash",
-    },
-    {
-      id: "PS002",
-      type: "most-private",
-      itemName: "Gold Chain 22K",
-      customerName: "Anil Sharma",
-      salePrice: 95000,
-      date: "2024-01-12",
-      paymentMethod: "Bank Transfer",
-    },
-    {
-      id: "PS003",
-      type: "girvi",
-      itemName: "Diamond Earrings",
-      customerName: "Cash Customer",
-      salePrice: 125000,
-      date: "2024-01-15",
-      paymentMethod: "Cash",
-    },
-    {
-      id: "PS004",
-      type: "most-private",
-      itemName: "Silver Bangles Set",
-      customerName: "Priya Gupta",
-      salePrice: 12000,
-      date: "2024-01-18",
-      paymentMethod: "Cash",
-    },
-    {
-      id: "PS005",
-      type: "girvi",
-      itemName: "Gold Necklace Heavy",
-      customerName: "Cash Customer",
-      salePrice: 285000,
-      date: "2024-01-20",
-      paymentMethod: "Cash",
-    },
-  ])
-
-  // Filter sales by date and type
-  const filteredSales = allSales.filter((sale) => {
-    const saleDate = new Date(sale.date)
-    const start = new Date(startDate)
-    const end = new Date(endDate)
-    const dateMatch = saleDate >= start && saleDate <= end
-    const typeMatch = filterType === "all" || sale.type === filterType
-    return dateMatch && typeMatch
+  // Data from database
+  const [allSales, setAllSales] = useState<PrivateSale[]>([])
+  const [statistics, setStatistics] = useState<Statistics>({
+    totalSales: 0,
+    totalTransactions: 0,
+    girviSales: { total: 0, count: 0 },
+    mostPrivateSales: { total: 0, count: 0 }
   })
 
-  // Calculate totals
-  const totalSales = filteredSales.reduce((sum, sale) => sum + sale.salePrice, 0)
-  const girviSales = filteredSales.filter((s) => s.type === "girvi")
-  const mostPrivateSales = filteredSales.filter((s) => s.type === "most-private")
-  const girviTotal = girviSales.reduce((sum, sale) => sum + sale.salePrice, 0)
-  const mostPrivateTotal = mostPrivateSales.reduce((sum, sale) => sum + sale.salePrice, 0)
+  // Fetch reports when filters change
+  useEffect(() => {
+    fetchReports()
+  }, [startDate, endDate, filterType])
+
+  const fetchReports = async () => {
+    setLoading(true)
+    try {
+      const params = new URLSearchParams({
+        start_date: startDate,
+        end_date: endDate,
+        sale_type: filterType
+      })
+
+      const response = await fetch(`/api/private-sales/reports?${params}`)
+      const result = await response.json()
+
+      if (response.ok) {
+        setAllSales(result.data.sales)
+        setStatistics(result.data.statistics)
+      } else {
+        throw new Error(result.error)
+      }
+    } catch (error) {
+      console.error("Failed to fetch reports:", error)
+      toast({
+        title: "Error",
+        description: "Failed to load reports",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen bg-zinc-950">
@@ -242,7 +236,7 @@ export default function PrivateSaleReportPage() {
                   </div>
                   <div>
                     <p className="text-sm text-zinc-400">Total Private Sales</p>
-                    <p className="text-2xl font-bold text-white">₹{totalSales.toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-white">₹{statistics.totalSales.toLocaleString()}</p>
                   </div>
                 </div>
               </CardContent>
@@ -256,8 +250,8 @@ export default function PrivateSaleReportPage() {
                   </div>
                   <div>
                     <p className="text-sm text-zinc-400">Girvi Sales</p>
-                    <p className="text-2xl font-bold text-white">₹{girviTotal.toLocaleString()}</p>
-                    <p className="text-xs text-zinc-500">{girviSales.length} transactions</p>
+                    <p className="text-2xl font-bold text-white">₹{statistics.girviSales.total.toLocaleString()}</p>
+                    <p className="text-xs text-zinc-500">{statistics.girviSales.count} transactions</p>
                   </div>
                 </div>
               </CardContent>
@@ -271,8 +265,8 @@ export default function PrivateSaleReportPage() {
                   </div>
                   <div>
                     <p className="text-sm text-zinc-400">Most Private Sales</p>
-                    <p className="text-2xl font-bold text-white">₹{mostPrivateTotal.toLocaleString()}</p>
-                    <p className="text-xs text-zinc-500">{mostPrivateSales.length} transactions</p>
+                    <p className="text-2xl font-bold text-white">₹{statistics.mostPrivateSales.total.toLocaleString()}</p>
+                    <p className="text-xs text-zinc-500">{statistics.mostPrivateSales.count} transactions</p>
                   </div>
                 </div>
               </CardContent>
@@ -286,7 +280,7 @@ export default function PrivateSaleReportPage() {
                   </div>
                   <div>
                     <p className="text-sm text-zinc-400">Total Transactions</p>
-                    <p className="text-2xl font-bold text-white">{filteredSales.length}</p>
+                    <p className="text-2xl font-bold text-white">{statistics.totalTransactions}</p>
                     <p className="text-xs text-zinc-500">in selected period</p>
                   </div>
                 </div>
@@ -317,21 +311,29 @@ export default function PrivateSaleReportPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredSales.length > 0 ? (
-                      filteredSales.map((sale) => (
-                        <TableRow key={sale.id} className="border-zinc-800 hover:bg-zinc-800/50">
-                          <TableCell className="text-zinc-300 font-mono">{sale.id}</TableCell>
-                          <TableCell className="text-zinc-300">{sale.date}</TableCell>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
+                          Loading...
+                        </TableCell>
+                      </TableRow>
+                    ) : allSales.length > 0 ? (
+                      allSales.map((sale) => (
+                        <TableRow key={sale._id} className="border-zinc-800 hover:bg-zinc-800/50">
+                          <TableCell className="text-zinc-300 font-mono">{sale._id.slice(-6)}</TableCell>
+                          <TableCell className="text-zinc-300">
+                            {new Date(sale.sale_date).toLocaleDateString()}
+                          </TableCell>
                           <TableCell>
-                            <Badge className={sale.type === "girvi" ? "bg-orange-600" : "bg-purple-600"}>
-                              {sale.type === "girvi" ? "Girvi" : "Most Private"}
+                            <Badge className={sale.sale_type === "girvi" ? "bg-orange-600" : "bg-purple-600"}>
+                              {sale.sale_type === "girvi" ? "Girvi" : "Most Private"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-white font-medium">{sale.itemName}</TableCell>
-                          <TableCell className="text-zinc-300">{sale.customerName}</TableCell>
-                          <TableCell className="text-zinc-300">{sale.paymentMethod}</TableCell>
+                          <TableCell className="text-white font-medium">{sale.item_name}</TableCell>
+                          <TableCell className="text-zinc-300">{sale.customer_name || "Cash Customer"}</TableCell>
+                          <TableCell className="text-zinc-300">{sale.payment_mode}</TableCell>
                           <TableCell className="text-green-400 font-semibold text-right">
-                            ₹{sale.salePrice.toLocaleString()}
+                            ₹{sale.total_amount.toLocaleString()}
                           </TableCell>
                         </TableRow>
                       ))
@@ -347,10 +349,10 @@ export default function PrivateSaleReportPage() {
               </div>
 
               {/* Total Row */}
-              {filteredSales.length > 0 && (
+              {allSales.length > 0 && (
                 <div className="mt-4 p-4 rounded-lg bg-zinc-800 border border-zinc-700 flex justify-between items-center">
                   <span className="text-zinc-400 font-medium">Grand Total</span>
-                  <span className="text-2xl font-bold text-green-400">₹{totalSales.toLocaleString()}</span>
+                  <span className="text-2xl font-bold text-green-400">₹{statistics.totalSales.toLocaleString()}</span>
                 </div>
               )}
             </CardContent>

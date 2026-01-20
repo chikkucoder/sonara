@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Diamond, Gavel, FileBarChart, Search, ArrowLeft, ShoppingBag, Package } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 // Hidden sidebar for private zone
 const privateNavigation = [
@@ -95,35 +96,37 @@ function PrivateSidebar() {
 
 // Girvi Private Sale Interface
 interface GirviItem {
-  id: string
-  customerName: string
-  itemName: string
-  metalType: string
-  weight: string
-  loanAmount: number
-  status: "auctioned"
+  _id: string
+  customer_name: string
+  item_name: string
+  metal_type: string
+  weight: number
+  purity: string
+  loan_amount: number
+  status: string
 }
 
 // Normal Inventory Item for Most Private Sale
 interface NormalItem {
-  id: string
-  name: string
+  _id: string
+  item_name: string
   category: string
-  metalType: string
-  weight: string
-  purity: string
-  price: number
+  metal_type?: string
+  weight?: number
+  purity?: string
+  rate: number
+  quantity: number
 }
 
 // Private Sale Record
 interface PrivateSale {
-  id: string
-  type: "girvi" | "most-private"
-  itemName: string
-  customerName: string
-  salePrice: number
-  date: string
-  paymentMethod: string
+  _id: string
+  sale_type: "girvi" | "most-private"
+  item_name: string
+  customer_name?: string
+  total_amount: number
+  sale_date: string
+  payment_mode: string
 }
 
 export default function PrivateZonePage() {
@@ -131,81 +134,70 @@ export default function PrivateZonePage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [selectedItem, setSelectedItem] = useState<GirviItem | NormalItem | null>(null)
+  const [loading, setLoading] = useState(false)
+  const { toast } = useToast()
 
-  // Sample auctioned girvi items
-  const [girviItems] = useState<GirviItem[]>([
-    {
-      id: "G001",
-      customerName: "Ramesh Sharma",
-      itemName: "Gold Necklace",
-      metalType: "Gold",
-      weight: "25g",
-      loanAmount: 125000,
-      status: "auctioned",
-    },
-    {
-      id: "G002",
-      customerName: "Sunita Devi",
-      itemName: "Gold Bangles (4 pcs)",
-      metalType: "Gold",
-      weight: "40g",
-      loanAmount: 200000,
-      status: "auctioned",
-    },
-    {
-      id: "G003",
-      customerName: "Mohan Lal",
-      itemName: "Diamond Ring",
-      metalType: "Gold + Diamond",
-      weight: "8g",
-      loanAmount: 85000,
-      status: "auctioned",
-    },
-  ])
+  // State for data from database
+  const [girviItems, setGirviItems] = useState<GirviItem[]>([])
+  const [normalItems, setNormalItems] = useState<NormalItem[]>([])
+  const [privateSales, setPrivateSales] = useState<PrivateSale[]>([])
 
-  // Sample normal inventory items for most private sale
-  const [normalItems] = useState<NormalItem[]>([
-    {
-      id: "N001",
-      name: "Gold Chain 22K",
-      category: "Chains",
-      metalType: "Gold",
-      weight: "15g",
-      purity: "22K",
-      price: 97500,
-    },
-    {
-      id: "N002",
-      name: "Silver Anklets",
-      category: "Anklets",
-      metalType: "Silver",
-      weight: "50g",
-      purity: "925",
-      price: 5000,
-    },
-    {
-      id: "N003",
-      name: "Gold Earrings",
-      category: "Earrings",
-      metalType: "Gold",
-      weight: "10g",
-      purity: "18K",
-      price: 55000,
-    },
-  ])
+  // Fetch Girvi items (auctioned ones)
+  useEffect(() => {
+    fetchGirviItems()
+  }, [])
 
-  // Private sales records
-  const [privateSales, setPrivateSales] = useState<PrivateSale[]>([
-    {
-      id: "PS001",
-      type: "girvi",
-      itemName: "Gold Kada",
-      customerName: "Cash Customer",
-      salePrice: 180000,
-      date: "2024-01-10",
-      paymentMethod: "Cash",
-    },
-  ])
+  // Fetch Normal inventory items
+  useEffect(() => {
+    fetchNormalItems()
+  }, [])
+
+  // Fetch recent private sales
+  useEffect(() => {
+    fetchPrivateSales()
+  }, [])
+
+  const fetchGirviItems = async () => {
+    try {
+      const response = await fetch("/api/girvi")
+      const result = await response.json()
+      if (response.ok) {
+        // Filter only auctioned or defaulted girvi items
+        const auctionedItems = result.data.filter(
+          (item: GirviItem) => item.status === "auctioned" || item.status === "defaulted"
+        )
+        setGirviItems(auctionedItems)
+      }
+    } catch (error) {
+      console.error("Failed to fetch girvi items:", error)
+    }
+  }
+
+  const fetchNormalItems = async () => {
+    try {
+      const response = await fetch("/api/inventory/normal")
+      const result = await response.json()
+      if (response.ok) {
+        // Filter items with quantity > 0
+        const availableItems = result.data.filter((item: NormalItem) => item.quantity > 0)
+        setNormalItems(availableItems)
+      }
+    } catch (error) {
+      console.error("Failed to fetch inventory items:", error)
+    }
+  }
+
+  const fetchPrivateSales = async () => {
+    try {
+      const response = await fetch("/api/private-sales")
+      const result = await response.json()
+      if (response.ok) {
+        setPrivateSales(result.data)
+      }
+    } catch (error) {
+      console.error("Failed to fetch private sales:", error)
+    }
+  }
 
   // Sale form state
   const [saleForm, setSaleForm] = useState({
@@ -214,34 +206,83 @@ export default function PrivateZonePage() {
     paymentMethod: "Cash",
   })
 
-  const handleSale = () => {
-    if (!selectedItem || !saleForm.salePrice) return
-
-    const newSale: PrivateSale = {
-      id: `PS${String(privateSales.length + 1).padStart(3, "0")}`,
-      type: activeTab === "girvi" ? "girvi" : "most-private",
-      itemName: "name" in selectedItem ? selectedItem.name : selectedItem.itemName,
-      customerName: saleForm.customerName || "Cash Customer",
-      salePrice: Number.parseFloat(saleForm.salePrice),
-      date: new Date().toISOString().split("T")[0],
-      paymentMethod: saleForm.paymentMethod,
+  const handleSale = async () => {
+    if (!selectedItem || !saleForm.salePrice) {
+      toast({
+        title: "Error",
+        description: "Please enter sale price",
+        variant: "destructive",
+      })
+      return
     }
 
-    setPrivateSales([newSale, ...privateSales])
-    setIsDialogOpen(false)
-    setSelectedItem(null)
-    setSaleForm({ customerName: "", salePrice: "", paymentMethod: "Cash" })
+    setLoading(true)
+    try {
+      const isGirvi = "_id" in selectedItem && "loan_amount" in selectedItem
+      const itemId = selectedItem._id
+      const itemName = "item_name" in selectedItem ? selectedItem.item_name : ""
+
+      const saleData = {
+        item_id: itemId,
+        source_type: isGirvi ? "girvi" : "inventory",
+        sale_type: activeTab === "girvi" ? "girvi" : "most-private",
+        item_name: itemName,
+        customer_name: saleForm.customerName || "Cash Customer",
+        customer_phone: "",
+        quantity: 1,
+        weight: "weight" in selectedItem ? selectedItem.weight : undefined,
+        metal_type: "metal_type" in selectedItem ? selectedItem.metal_type : undefined,
+        purity: "purity" in selectedItem ? selectedItem.purity : undefined,
+        rate: Number.parseFloat(saleForm.salePrice),
+        total_amount: Number.parseFloat(saleForm.salePrice),
+        sale_date: new Date().toISOString(),
+        payment_mode: saleForm.paymentMethod,
+      }
+
+      const response = await fetch("/api/private-sales", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(saleData),
+      })
+
+      if (!response.ok) {
+        throw new Error("Failed to create private sale")
+      }
+
+      toast({
+        title: "Success",
+        description: "Private sale completed successfully",
+      })
+
+      // Refresh data
+      fetchGirviItems()
+      fetchNormalItems()
+      fetchPrivateSales()
+
+      // Reset form
+      setIsDialogOpen(false)
+      setSelectedItem(null)
+      setSaleForm({ customerName: "", salePrice: "", paymentMethod: "Cash" })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to complete sale",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const filteredGirviItems = girviItems.filter(
     (item) =>
-      item.itemName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.customerName.toLowerCase().includes(searchTerm.toLowerCase()),
+      item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.customer_name.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
   const filteredNormalItems = normalItems.filter(
     (item) =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.item_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.category.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
@@ -305,99 +346,107 @@ export default function PrivateZonePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredGirviItems.map((item) => (
-                          <TableRow key={item.id} className="border-zinc-800 hover:bg-zinc-800/50">
-                            <TableCell className="text-zinc-300 font-mono">{item.id}</TableCell>
-                            <TableCell className="text-white font-medium">{item.itemName}</TableCell>
-                            <TableCell className="text-zinc-300">{item.customerName}</TableCell>
-                            <TableCell className="text-zinc-300">
-                              {item.metalType} - {item.weight}
-                            </TableCell>
-                            <TableCell className="text-zinc-300">₹{item.loanAmount.toLocaleString()}</TableCell>
-                            <TableCell>
-                              <Dialog
-                                open={isDialogOpen && selectedItem?.id === item.id}
-                                onOpenChange={(open) => {
-                                  setIsDialogOpen(open)
-                                  if (open) setSelectedItem(item)
-                                }}
-                              >
-                                <DialogTrigger asChild>
-                                  <Button size="sm" className="bg-red-600 hover:bg-red-700">
-                                    <ShoppingBag className="h-4 w-4 mr-1" />
-                                    Sell
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="bg-zinc-900 border-zinc-800">
-                                  <DialogHeader>
-                                    <DialogTitle className="text-white">Private Sale - {item.itemName}</DialogTitle>
-                                    <DialogDescription className="text-zinc-400">
-                                      This sale will not include GST or official documentation
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <div className="space-y-4 py-4">
-                                    <div className="p-3 rounded-lg bg-zinc-800 border border-zinc-700">
-                                      <p className="text-sm text-zinc-400">Item Details</p>
-                                      <p className="text-white font-medium">{item.itemName}</p>
-                                      <p className="text-sm text-zinc-400">
-                                        {item.metalType} - {item.weight}
-                                      </p>
-                                      <p className="text-sm text-zinc-400">
-                                        Original Loan: ₹{item.loanAmount.toLocaleString()}
-                                      </p>
+                        {filteredGirviItems.length > 0 ? (
+                          filteredGirviItems.map((item) => (
+                            <TableRow key={item._id} className="border-zinc-800 hover:bg-zinc-800/50">
+                              <TableCell className="text-zinc-300 font-mono">{item._id.slice(-6)}</TableCell>
+                              <TableCell className="text-white font-medium">{item.item_name}</TableCell>
+                              <TableCell className="text-zinc-300">{item.customer_name}</TableCell>
+                              <TableCell className="text-zinc-300">
+                                {item.metal_type} - {item.weight}g {item.purity && `(${item.purity})`}
+                              </TableCell>
+                              <TableCell className="text-zinc-300">₹{item.loan_amount.toLocaleString()}</TableCell>
+                              <TableCell>
+                                <Dialog
+                                  open={isDialogOpen && selectedItem?._id === item._id}
+                                  onOpenChange={(open) => {
+                                    setIsDialogOpen(open)
+                                    if (open) setSelectedItem(item)
+                                  }}
+                                >
+                                  <DialogTrigger asChild>
+                                    <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                                      <ShoppingBag className="h-4 w-4 mr-1" />
+                                      Sell
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="bg-zinc-900 border-zinc-800">
+                                    <DialogHeader>
+                                      <DialogTitle className="text-white">Private Sale - {item.item_name}</DialogTitle>
+                                      <DialogDescription className="text-zinc-400">
+                                        This sale will not include GST or official documentation
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                      <div className="p-3 rounded-lg bg-zinc-800 border border-zinc-700">
+                                        <p className="text-sm text-zinc-400">Item Details</p>
+                                        <p className="text-white font-medium">{item.item_name}</p>
+                                        <p className="text-sm text-zinc-400">
+                                          {item.metal_type} - {item.weight}g {item.purity && `- ${item.purity}`}
+                                        </p>
+                                        <p className="text-sm text-zinc-400">
+                                          Original Loan: ₹{item.loan_amount.toLocaleString()}
+                                        </p>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-zinc-300">Customer Name (Optional)</Label>
+                                        <Input
+                                          placeholder="Cash Customer"
+                                          value={saleForm.customerName}
+                                          onChange={(e) => setSaleForm({ ...saleForm, customerName: e.target.value })}
+                                          className="bg-zinc-800 border-zinc-700 text-white"
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-zinc-300">Sale Price *</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="Enter sale price"
+                                          value={saleForm.salePrice}
+                                          onChange={(e) => setSaleForm({ ...saleForm, salePrice: e.target.value })}
+                                          className="bg-zinc-800 border-zinc-700 text-white"
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-zinc-300">Payment Method</Label>
+                                        <Select
+                                          value={saleForm.paymentMethod}
+                                          onValueChange={(v) => setSaleForm({ ...saleForm, paymentMethod: v })}
+                                        >
+                                          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent className="bg-zinc-800 border-zinc-700">
+                                            <SelectItem value="Cash">Cash</SelectItem>
+                                            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
                                     </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-zinc-300">Customer Name (Optional)</Label>
-                                      <Input
-                                        placeholder="Cash Customer"
-                                        value={saleForm.customerName}
-                                        onChange={(e) => setSaleForm({ ...saleForm, customerName: e.target.value })}
-                                        className="bg-zinc-800 border-zinc-700 text-white"
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-zinc-300">Sale Price *</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="Enter sale price"
-                                        value={saleForm.salePrice}
-                                        onChange={(e) => setSaleForm({ ...saleForm, salePrice: e.target.value })}
-                                        className="bg-zinc-800 border-zinc-700 text-white"
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-zinc-300">Payment Method</Label>
-                                      <Select
-                                        value={saleForm.paymentMethod}
-                                        onValueChange={(v) => setSaleForm({ ...saleForm, paymentMethod: v })}
+                                    <DialogFooter>
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => setIsDialogOpen(false)}
+                                        className="border-zinc-700 text-zinc-300"
                                       >
-                                        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-zinc-800 border-zinc-700">
-                                          <SelectItem value="Cash">Cash</SelectItem>
-                                          <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  </div>
-                                  <DialogFooter>
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => setIsDialogOpen(false)}
-                                      className="border-zinc-700 text-zinc-300"
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button onClick={handleSale} className="bg-red-600 hover:bg-red-700">
-                                      Complete Sale
-                                    </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
+                                        Cancel
+                                      </Button>
+                                      <Button onClick={handleSale} disabled={loading} className="bg-red-600 hover:bg-red-700">
+                                        {loading ? "Processing..." : "Complete Sale"}
+                                      </Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={6} className="text-center py-8 text-zinc-500">
+                              No auctioned girvi items available for private sale
                             </TableCell>
                           </TableRow>
-                        ))}
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -441,100 +490,108 @@ export default function PrivateZonePage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredNormalItems.map((item) => (
-                          <TableRow key={item.id} className="border-zinc-800 hover:bg-zinc-800/50">
-                            <TableCell className="text-zinc-300 font-mono">{item.id}</TableCell>
-                            <TableCell className="text-white font-medium">{item.name}</TableCell>
-                            <TableCell className="text-zinc-300">{item.category}</TableCell>
-                            <TableCell className="text-zinc-300">
-                              {item.metalType} - {item.weight}
-                            </TableCell>
-                            <TableCell className="text-zinc-300">{item.purity}</TableCell>
-                            <TableCell className="text-zinc-300">₹{item.price.toLocaleString()}</TableCell>
-                            <TableCell>
-                              <Dialog
-                                open={isDialogOpen && selectedItem?.id === item.id}
-                                onOpenChange={(open) => {
-                                  setIsDialogOpen(open)
-                                  if (open) setSelectedItem(item)
-                                }}
-                              >
-                                <DialogTrigger asChild>
-                                  <Button size="sm" className="bg-red-600 hover:bg-red-700">
-                                    <ShoppingBag className="h-4 w-4 mr-1" />
-                                    Sell
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="bg-zinc-900 border-zinc-800">
-                                  <DialogHeader>
-                                    <DialogTitle className="text-white">Private Sale - {item.name}</DialogTitle>
-                                    <DialogDescription className="text-zinc-400">
-                                      This sale will not include GST or official documentation
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <div className="space-y-4 py-4">
-                                    <div className="p-3 rounded-lg bg-zinc-800 border border-zinc-700">
-                                      <p className="text-sm text-zinc-400">Item Details</p>
-                                      <p className="text-white font-medium">{item.name}</p>
-                                      <p className="text-sm text-zinc-400">
-                                        {item.metalType} - {item.weight} - {item.purity}
-                                      </p>
-                                      <p className="text-sm text-zinc-400">
-                                        Listed Price: ₹{item.price.toLocaleString()}
-                                      </p>
+                        {filteredNormalItems.length > 0 ? (
+                          filteredNormalItems.map((item) => (
+                            <TableRow key={item._id} className="border-zinc-800 hover:bg-zinc-800/50">
+                              <TableCell className="text-zinc-300 font-mono">{item._id.slice(-6)}</TableCell>
+                              <TableCell className="text-white font-medium">{item.item_name}</TableCell>
+                              <TableCell className="text-zinc-300">{item.category}</TableCell>
+                              <TableCell className="text-zinc-300">
+                                {item.metal_type || "N/A"} - {item.weight ? `${item.weight}g` : "N/A"}
+                              </TableCell>
+                              <TableCell className="text-zinc-300">{item.purity || "N/A"}</TableCell>
+                              <TableCell className="text-zinc-300">₹{item.rate.toLocaleString()}</TableCell>
+                              <TableCell>
+                                <Dialog
+                                  open={isDialogOpen && selectedItem?._id === item._id}
+                                  onOpenChange={(open) => {
+                                    setIsDialogOpen(open)
+                                    if (open) setSelectedItem(item)
+                                  }}
+                                >
+                                  <DialogTrigger asChild>
+                                    <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                                      <ShoppingBag className="h-4 w-4 mr-1" />
+                                      Sell
+                                    </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="bg-zinc-900 border-zinc-800">
+                                    <DialogHeader>
+                                      <DialogTitle className="text-white">Private Sale - {item.item_name}</DialogTitle>
+                                      <DialogDescription className="text-zinc-400">
+                                        This sale will not include GST or official documentation
+                                      </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="space-y-4 py-4">
+                                      <div className="p-3 rounded-lg bg-zinc-800 border border-zinc-700">
+                                        <p className="text-sm text-zinc-400">Item Details</p>
+                                        <p className="text-white font-medium">{item.item_name}</p>
+                                        <p className="text-sm text-zinc-400">
+                                          {item.metal_type || "N/A"} - {item.weight ? `${item.weight}g` : "N/A"} - {item.purity || "N/A"}
+                                        </p>
+                                        <p className="text-sm text-zinc-400">
+                                          Listed Price: ₹{item.rate.toLocaleString()}
+                                        </p>
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-zinc-300">Customer Name (Optional)</Label>
+                                        <Input
+                                          placeholder="Cash Customer"
+                                          value={saleForm.customerName}
+                                          onChange={(e) => setSaleForm({ ...saleForm, customerName: e.target.value })}
+                                          className="bg-zinc-800 border-zinc-700 text-white"
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-zinc-300">Sale Price *</Label>
+                                        <Input
+                                          type="number"
+                                          placeholder="Enter sale price"
+                                          value={saleForm.salePrice}
+                                          onChange={(e) => setSaleForm({ ...saleForm, salePrice: e.target.value })}
+                                          className="bg-zinc-800 border-zinc-700 text-white"
+                                        />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label className="text-zinc-300">Payment Method</Label>
+                                        <Select
+                                          value={saleForm.paymentMethod}
+                                          onValueChange={(v) => setSaleForm({ ...saleForm, paymentMethod: v })}
+                                        >
+                                          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                                            <SelectValue />
+                                          </SelectTrigger>
+                                          <SelectContent className="bg-zinc-800 border-zinc-700">
+                                            <SelectItem value="Cash">Cash</SelectItem>
+                                            <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
                                     </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-zinc-300">Customer Name (Optional)</Label>
-                                      <Input
-                                        placeholder="Cash Customer"
-                                        value={saleForm.customerName}
-                                        onChange={(e) => setSaleForm({ ...saleForm, customerName: e.target.value })}
-                                        className="bg-zinc-800 border-zinc-700 text-white"
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-zinc-300">Sale Price *</Label>
-                                      <Input
-                                        type="number"
-                                        placeholder="Enter sale price"
-                                        value={saleForm.salePrice}
-                                        onChange={(e) => setSaleForm({ ...saleForm, salePrice: e.target.value })}
-                                        className="bg-zinc-800 border-zinc-700 text-white"
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label className="text-zinc-300">Payment Method</Label>
-                                      <Select
-                                        value={saleForm.paymentMethod}
-                                        onValueChange={(v) => setSaleForm({ ...saleForm, paymentMethod: v })}
+                                    <DialogFooter>
+                                      <Button
+                                        variant="outline"
+                                        onClick={() => setIsDialogOpen(false)}
+                                        className="border-zinc-700 text-zinc-300"
                                       >
-                                        <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
-                                          <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent className="bg-zinc-800 border-zinc-700">
-                                          <SelectItem value="Cash">Cash</SelectItem>
-                                          <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
-                                        </SelectContent>
-                                      </Select>
-                                    </div>
-                                  </div>
-                                  <DialogFooter>
-                                    <Button
-                                      variant="outline"
-                                      onClick={() => setIsDialogOpen(false)}
-                                      className="border-zinc-700 text-zinc-300"
-                                    >
-                                      Cancel
-                                    </Button>
-                                    <Button onClick={handleSale} className="bg-red-600 hover:bg-red-700">
-                                      Complete Sale
-                                    </Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
+                                        Cancel
+                                      </Button>
+                                      <Button onClick={handleSale} disabled={loading} className="bg-red-600 hover:bg-red-700">
+                                        {loading ? "Processing..." : "Complete Sale"}
+                                      </Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
+                              No inventory items available for private sale
                             </TableCell>
                           </TableRow>
-                        ))}
+                        )}
                       </TableBody>
                     </Table>
                   </div>
@@ -564,23 +621,32 @@ export default function PrivateZonePage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {privateSales.map((sale) => (
-                      <TableRow key={sale.id} className="border-zinc-800 hover:bg-zinc-800/50">
-                        <TableCell className="text-zinc-300 font-mono">{sale.id}</TableCell>
+                    {privateSales.slice(0, 10).map((sale) => (
+                      <TableRow key={sale._id} className="border-zinc-800 hover:bg-zinc-800/50">
+                        <TableCell className="text-zinc-300 font-mono">{sale._id.slice(-6)}</TableCell>
                         <TableCell>
-                          <Badge className={sale.type === "girvi" ? "bg-orange-600" : "bg-purple-600"}>
-                            {sale.type === "girvi" ? "Girvi" : "Most Private"}
+                          <Badge className={sale.sale_type === "girvi" ? "bg-orange-600" : "bg-purple-600"}>
+                            {sale.sale_type === "girvi" ? "Girvi" : "Most Private"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-white font-medium">{sale.itemName}</TableCell>
-                        <TableCell className="text-zinc-300">{sale.customerName}</TableCell>
+                        <TableCell className="text-white font-medium">{sale.item_name}</TableCell>
+                        <TableCell className="text-zinc-300">{sale.customer_name || "Cash Customer"}</TableCell>
                         <TableCell className="text-green-400 font-semibold">
-                          ₹{sale.salePrice.toLocaleString()}
+                          ₹{sale.total_amount.toLocaleString()}
                         </TableCell>
-                        <TableCell className="text-zinc-300">{sale.date}</TableCell>
-                        <TableCell className="text-zinc-300">{sale.paymentMethod}</TableCell>
+                        <TableCell className="text-zinc-300">
+                          {new Date(sale.sale_date).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell className="text-zinc-300">{sale.payment_mode}</TableCell>
                       </TableRow>
                     ))}
+                    {privateSales.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
+                          No private sales yet
+                        </TableCell>
+                      </TableRow>
+                    )}
                   </TableBody>
                 </Table>
               </div>
