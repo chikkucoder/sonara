@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation"
 import { Sidebar, useSidebarStore } from "@/components/sidebar"
 import { cn } from "@/lib/utils"
 
-const publicRoutes = ["/", "/login"]
+const publicRoutes = ["/", "/login", "/about", "/contact", "/signup"]
 const superAdminRoutes = ["/super-admin"]
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
