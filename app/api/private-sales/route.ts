@@ -1,6 +1,8 @@
 import { requireAuth } from "@/lib/auth"
 import dbConnect from "@/lib/mongodb"
 import PrivateSale from "@/lib/models/PrivateSale"
+import Girvi from "@/lib/models/Girvi"
+import Inventory from "@/lib/models/Inventory"
 import { NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/app/api/auth/[...nextauth]/route"
@@ -17,13 +19,23 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url)
     const saleType = searchParams.get("sale_type")
+    const startDate = searchParams.get("start_date")
+    const endDate = searchParams.get("end_date")
 
     let query: any = { user_id: userId }
+    
     if (saleType) {
       query.sale_type = saleType
     }
 
-    const privateSales = await PrivateSale.find(query).sort({ created_at: -1 }).lean()
+    if (startDate && endDate) {
+      query.sale_date = {
+        $gte: new Date(startDate),
+        $lte: new Date(endDate)
+      }
+    }
+
+    const privateSales = await PrivateSale.find(query).sort({ sale_date: -1, created_at: -1 }).lean()
 
     return NextResponse.json({ data: privateSales })
   } catch (error) {
@@ -46,10 +58,23 @@ export async function POST(request: Request) {
 
     const body = await request.json()
 
+    // Create private sale
     const privateSale = await PrivateSale.create({
       ...body,
       user_id: userId,
     })
+
+    // Update the source item status
+    if (body.source_type === "girvi" && body.item_id) {
+      await Girvi.findByIdAndUpdate(body.item_id, {
+        status: "sold_private"
+      })
+    } else if (body.source_type === "inventory" && body.item_id) {
+      // Reduce inventory quantity
+      await Inventory.findByIdAndUpdate(body.item_id, {
+        $inc: { quantity: -1 }
+      })
+    }
 
     return NextResponse.json({ data: privateSale })
   } catch (error) {

@@ -33,9 +33,17 @@ export async function POST(request: Request) {
     }
 
     // Get user with password
-    const user = await User.findById(userId)
+    const user = await User.findById(userId).select('+password')
     if (!user) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    // Check if user has a password set
+    if (!user.password) {
+      return NextResponse.json(
+        { error: "User password not found. Please contact support." },
+        { status: 400 }
+      )
     }
 
     // Verify current password
