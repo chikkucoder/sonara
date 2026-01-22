@@ -75,6 +75,8 @@ export default function PurchasePage() {
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null)
   const [isSupplierDetailOpen, setIsSupplierDetailOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("purchases")
+  const [keepSupplierInfo, setKeepSupplierInfo] = useState(false)
+  const [savedSupplierInfo, setSavedSupplierInfo] = useState<any>(null)
   
   const [formData, setFormData] = useState({
     supplier_name: "",
@@ -218,8 +220,42 @@ export default function PurchasePage() {
         title: "Success",
         description: data.message || "Purchase added and inventory updated successfully!",
       })
-      setIsAddDialogOpen(false)
-      resetForm()
+      
+      // Save supplier info if user wants to add more items
+      if (keepSupplierInfo) {
+        setSavedSupplierInfo({
+          supplier_name: formData.supplier_name,
+          supplier_phone: formData.supplier_phone,
+          supplier_address: formData.supplier_address,
+          supplier_gst: formData.supplier_gst,
+          supplier_type: formData.supplier_type,
+          invoice_no: formData.invoice_no,
+          purchase_date: formData.purchase_date,
+          payment_mode: formData.payment_mode,
+          payment_status: formData.payment_status,
+        })
+        resetForm()
+        // Restore supplier info after reset
+        setTimeout(() => {
+          setFormData(prev => ({
+            ...prev,
+            supplier_name: formData.supplier_name,
+            supplier_phone: formData.supplier_phone,
+            supplier_address: formData.supplier_address,
+            supplier_gst: formData.supplier_gst,
+            supplier_type: formData.supplier_type,
+            invoice_no: formData.invoice_no,
+            purchase_date: formData.purchase_date,
+            payment_mode: formData.payment_mode,
+            payment_status: formData.payment_status,
+          }))
+        }, 0)
+      } else {
+        setIsAddDialogOpen(false)
+        resetForm()
+        setSavedSupplierInfo(null)
+      }
+      
       // Refresh purchases list
       fetchPurchases()
     } catch (error) {
@@ -370,6 +406,7 @@ export default function PurchasePage() {
       location: "",
       notes: "",
     })
+    setKeepSupplierInfo(false)
   }
 
   useEffect(() => {
@@ -798,13 +835,33 @@ export default function PurchasePage() {
                 </div>
 
                 <DialogFooter className="mt-6">
-                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                    Cancel
-                  </Button>
-                  <Button onClick={handleAddPurchase}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Purchase & Update Inventory
-                  </Button>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="keepSupplierInfo"
+                        checked={keepSupplierInfo}
+                        onChange={(e) => setKeepSupplierInfo(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      <Label htmlFor="keepSupplierInfo" className="text-sm cursor-pointer">
+                        Add more items from same supplier
+                      </Label>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={() => {
+                        setIsAddDialogOpen(false)
+                        setKeepSupplierInfo(false)
+                        setSavedSupplierInfo(null)
+                      }}>
+                        Cancel
+                      </Button>
+                      <Button onClick={handleAddPurchase}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        {keepSupplierInfo ? "Add Item & Continue" : "Add Purchase & Update Inventory"}
+                      </Button>
+                    </div>
+                  </div>
                 </DialogFooter>
               </DialogContent>
             </Dialog>

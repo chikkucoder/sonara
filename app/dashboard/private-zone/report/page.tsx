@@ -24,24 +24,24 @@ function PrivateSidebar() {
   const router = useRouter()
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-zinc-900 text-white">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r border-slate-200 shadow-sm">
       <div className="flex h-full flex-col">
         {/* Logo */}
-        <div className="flex items-center gap-3 border-b border-zinc-700 px-6 py-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600">
+        <div className="flex items-center gap-3 border-b border-slate-200 px-6 py-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-purple-600 to-blue-600">
             <Diamond className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="font-serif text-xl font-bold text-red-500">Private</h1>
-            <p className="text-xs text-zinc-400">Zone</p>
+            <h1 className="font-serif text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Private</h1>
+            <p className="text-xs text-slate-500">Zone</p>
           </div>
         </div>
 
         {/* Back to Main */}
-        <div className="px-3 py-4 border-b border-zinc-700">
+        <div className="px-3 py-4 border-b border-slate-200">
           <button
             onClick={() => router.push("/dashboard/settings")}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Settings
@@ -58,7 +58,7 @@ function PrivateSidebar() {
                 href={item.href}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  isActive ? "bg-red-600/20 text-red-500" : "text-zinc-400 hover:bg-zinc-800 hover:text-white",
+                  isActive ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -69,12 +69,12 @@ function PrivateSidebar() {
         </nav>
 
         {/* Warning */}
-        <div className="border-t border-zinc-700 p-4">
-          <div className="rounded-lg bg-red-600/10 border border-red-600/20 p-3">
-            <p className="text-xs text-red-400 text-center">
+        <div className="border-t border-slate-200 p-4">
+          <div className="rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 p-3">
+            <p className="text-xs text-purple-700 text-center font-medium">
               Confidential Area
               <br />
-              <span className="text-zinc-500">All transactions are private</span>
+              <span className="text-slate-600">All transactions are private</span>
             </p>
           </div>
         </div>
@@ -158,42 +158,42 @@ export default function PrivateSaleReportPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <PrivateSidebar />
       <main className="pl-64">
         <div className="p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-serif font-bold text-white">Private Sale Report</h1>
-            <p className="text-zinc-400 mt-1">Confidential sales analytics and records</p>
+            <h1 className="text-3xl font-serif font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Private Sale Report</h1>
+            <p className="text-slate-600 mt-1">Confidential sales analytics and records</p>
           </div>
 
           {/* Date Filters */}
-          <Card className="bg-zinc-900 border-zinc-800 mb-6">
+          <Card className="bg-white border-slate-200 shadow-lg mb-6">
             <CardContent className="py-4">
               <div className="flex flex-wrap items-end gap-4">
                 <div className="space-y-2">
-                  <Label className="text-zinc-400">Start Date</Label>
+                  <Label className="text-slate-700">Start Date</Label>
                   <Input
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    className="bg-zinc-800 border-zinc-700 text-white w-40"
+                    className="bg-slate-50 border-slate-200 text-slate-900 w-40"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-zinc-400">End Date</Label>
+                  <Label className="text-slate-700">End Date</Label>
                   <Input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    className="bg-zinc-800 border-zinc-700 text-white w-40"
+                    className="bg-slate-50 border-slate-200 text-slate-900 w-40"
                   />
                 </div>
                 <div className="flex gap-2">
                   <Button
                     variant={filterType === "all" ? "default" : "outline"}
                     onClick={() => setFilterType("all")}
-                    className={filterType === "all" ? "bg-red-600 hover:bg-red-700" : "border-zinc-700 text-zinc-300"}
+                    className={filterType === "all" ? "bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white" : "border-slate-300 text-slate-700"}
                   >
                     All
                   </Button>
@@ -201,7 +201,7 @@ export default function PrivateSaleReportPage() {
                     variant={filterType === "girvi" ? "default" : "outline"}
                     onClick={() => setFilterType("girvi")}
                     className={
-                      filterType === "girvi" ? "bg-orange-600 hover:bg-orange-700" : "border-zinc-700 text-zinc-300"
+                      filterType === "girvi" ? "bg-orange-600 hover:bg-orange-700 text-white" : "border-slate-300 text-slate-700"
                     }
                   >
                     Girvi Only
@@ -211,14 +211,14 @@ export default function PrivateSaleReportPage() {
                     onClick={() => setFilterType("most-private")}
                     className={
                       filterType === "most-private"
-                        ? "bg-purple-600 hover:bg-purple-700"
-                        : "border-zinc-700 text-zinc-300"
+                        ? "bg-purple-600 hover:bg-purple-700 text-white"
+                        : "border-slate-300 text-slate-700"
                     }
                   >
                     Most Private Only
                   </Button>
                 </div>
-                <Button variant="outline" className="border-zinc-700 text-zinc-300 ml-auto bg-transparent">
+                <Button variant="outline" className="border-slate-300 text-slate-700 ml-auto hover:bg-slate-100">
                   <Download className="h-4 w-4 mr-2" />
                   Export
                 </Button>
@@ -228,60 +228,60 @@ export default function PrivateSaleReportPage() {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className="bg-zinc-900 border-zinc-800">
+            <Card className="bg-white border-slate-200 shadow-lg">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-lg bg-red-600/20">
-                    <Banknote className="h-6 w-6 text-red-500" />
+                  <div className="p-3 rounded-lg bg-gradient-to-r from-purple-100 to-blue-100">
+                    <Banknote className="h-6 w-6 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-zinc-400">Total Private Sales</p>
-                    <p className="text-2xl font-bold text-white">₹{statistics.totalSales.toLocaleString()}</p>
+                    <p className="text-sm text-slate-600">Total Private Sales</p>
+                    <p className="text-2xl font-bold text-slate-900">₹{statistics.totalSales.toLocaleString()}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-zinc-900 border-zinc-800">
+            <Card className="bg-white border-slate-200 shadow-lg">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-lg bg-orange-600/20">
-                    <Gavel className="h-6 w-6 text-orange-500" />
+                  <div className="p-3 rounded-lg bg-orange-100">
+                    <Gavel className="h-6 w-6 text-orange-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-zinc-400">Girvi Sales</p>
-                    <p className="text-2xl font-bold text-white">₹{statistics.girviSales.total.toLocaleString()}</p>
-                    <p className="text-xs text-zinc-500">{statistics.girviSales.count} transactions</p>
+                    <p className="text-sm text-slate-600">Girvi Sales</p>
+                    <p className="text-2xl font-bold text-slate-900">₹{statistics.girviSales.total.toLocaleString()}</p>
+                    <p className="text-xs text-slate-500">{statistics.girviSales.count} transactions</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-zinc-900 border-zinc-800">
+            <Card className="bg-white border-slate-200 shadow-lg">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-lg bg-purple-600/20">
-                    <Package className="h-6 w-6 text-purple-500" />
+                  <div className="p-3 rounded-lg bg-purple-100">
+                    <Package className="h-6 w-6 text-purple-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-zinc-400">Most Private Sales</p>
-                    <p className="text-2xl font-bold text-white">₹{statistics.mostPrivateSales.total.toLocaleString()}</p>
-                    <p className="text-xs text-zinc-500">{statistics.mostPrivateSales.count} transactions</p>
+                    <p className="text-sm text-slate-600">Most Private Sales</p>
+                    <p className="text-2xl font-bold text-slate-900">₹{statistics.mostPrivateSales.total.toLocaleString()}</p>
+                    <p className="text-xs text-slate-500">{statistics.mostPrivateSales.count} transactions</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-zinc-900 border-zinc-800">
+            <Card className="bg-white border-slate-200 shadow-lg">
               <CardContent className="pt-6">
                 <div className="flex items-center gap-4">
-                  <div className="p-3 rounded-lg bg-green-600/20">
-                    <TrendingUp className="h-6 w-6 text-green-500" />
+                  <div className="p-3 rounded-lg bg-green-100">
+                    <TrendingUp className="h-6 w-6 text-green-600" />
                   </div>
                   <div>
-                    <p className="text-sm text-zinc-400">Total Transactions</p>
-                    <p className="text-2xl font-bold text-white">{statistics.totalTransactions}</p>
-                    <p className="text-xs text-zinc-500">in selected period</p>
+                    <p className="text-sm text-slate-600">Total Transactions</p>
+                    <p className="text-2xl font-bold text-slate-900">{statistics.totalTransactions}</p>
+                    <p className="text-xs text-slate-500">in selected period</p>
                   </div>
                 </div>
               </CardContent>
@@ -289,57 +289,57 @@ export default function PrivateSaleReportPage() {
           </div>
 
           {/* Sales Table */}
-          <Card className="bg-zinc-900 border-zinc-800">
-            <CardHeader>
+          <Card className="bg-white border-slate-200 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600">
               <CardTitle className="text-white font-serif">Transaction Details</CardTitle>
-              <CardDescription className="text-zinc-400">
+              <CardDescription className="text-purple-100">
                 All private sales from {startDate} to {endDate}
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="rounded-lg border border-zinc-800 overflow-hidden">
+            <CardContent className="pt-6">
+              <div className="rounded-lg border border-slate-200 overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-zinc-800 hover:bg-zinc-800/50">
-                      <TableHead className="text-zinc-400">ID</TableHead>
-                      <TableHead className="text-zinc-400">Date</TableHead>
-                      <TableHead className="text-zinc-400">Type</TableHead>
-                      <TableHead className="text-zinc-400">Item</TableHead>
-                      <TableHead className="text-zinc-400">Customer</TableHead>
-                      <TableHead className="text-zinc-400">Payment</TableHead>
-                      <TableHead className="text-zinc-400 text-right">Amount</TableHead>
+                    <TableRow className="bg-slate-50 hover:bg-slate-100">
+                      <TableHead className="text-slate-700 font-semibold">ID</TableHead>
+                      <TableHead className="text-slate-700 font-semibold">Date</TableHead>
+                      <TableHead className="text-slate-700 font-semibold">Type</TableHead>
+                      <TableHead className="text-slate-700 font-semibold">Item</TableHead>
+                      <TableHead className="text-slate-700 font-semibold">Customer</TableHead>
+                      <TableHead className="text-slate-700 font-semibold">Payment</TableHead>
+                      <TableHead className="text-slate-700 font-semibold text-right">Amount</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {loading ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
+                        <TableCell colSpan={7} className="text-center py-8 text-slate-500">
                           Loading...
                         </TableCell>
                       </TableRow>
                     ) : allSales.length > 0 ? (
                       allSales.map((sale) => (
-                        <TableRow key={sale._id} className="border-zinc-800 hover:bg-zinc-800/50">
-                          <TableCell className="text-zinc-300 font-mono">{sale._id.slice(-6)}</TableCell>
-                          <TableCell className="text-zinc-300">
+                        <TableRow key={sale._id} className="hover:bg-slate-50">
+                          <TableCell className="text-slate-600 font-mono">{sale._id.slice(-6)}</TableCell>
+                          <TableCell className="text-slate-700">
                             {new Date(sale.sale_date).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            <Badge className={sale.sale_type === "girvi" ? "bg-orange-600" : "bg-purple-600"}>
+                            <Badge className={sale.sale_type === "girvi" ? "bg-orange-100 text-orange-700" : "bg-purple-100 text-purple-700"}>
                               {sale.sale_type === "girvi" ? "Girvi" : "Most Private"}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-white font-medium">{sale.item_name}</TableCell>
-                          <TableCell className="text-zinc-300">{sale.customer_name || "Cash Customer"}</TableCell>
-                          <TableCell className="text-zinc-300">{sale.payment_mode}</TableCell>
-                          <TableCell className="text-green-400 font-semibold text-right">
+                          <TableCell className="text-slate-900 font-medium">{sale.item_name}</TableCell>
+                          <TableCell className="text-slate-700">{sale.customer_name || "Cash Customer"}</TableCell>
+                          <TableCell className="text-slate-700">{sale.payment_mode}</TableCell>
+                          <TableCell className="text-green-600 font-semibold text-right">
                             ₹{sale.total_amount.toLocaleString()}
                           </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
+                        <TableCell colSpan={7} className="text-center py-8 text-slate-500">
                           No transactions found for the selected period
                         </TableCell>
                       </TableRow>
@@ -350,9 +350,9 @@ export default function PrivateSaleReportPage() {
 
               {/* Total Row */}
               {allSales.length > 0 && (
-                <div className="mt-4 p-4 rounded-lg bg-zinc-800 border border-zinc-700 flex justify-between items-center">
-                  <span className="text-zinc-400 font-medium">Grand Total</span>
-                  <span className="text-2xl font-bold text-green-400">₹{statistics.totalSales.toLocaleString()}</span>
+                <div className="mt-4 p-4 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 flex justify-between items-center">
+                  <span className="text-slate-700 font-medium">Grand Total</span>
+                  <span className="text-2xl font-bold text-green-600">₹{statistics.totalSales.toLocaleString()}</span>
                 </div>
               )}
             </CardContent>

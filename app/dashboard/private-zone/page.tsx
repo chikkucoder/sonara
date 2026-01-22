@@ -35,24 +35,24 @@ function PrivateSidebar() {
   const router = useRouter()
 
   return (
-    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-zinc-900 text-white">
+    <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white border-r border-slate-200 shadow-sm">
       <div className="flex h-full flex-col">
         {/* Logo */}
-        <div className="flex items-center gap-3 border-b border-zinc-700 px-6 py-6">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600">
+        <div className="flex items-center gap-3 border-b border-slate-200 px-6 py-6">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-purple-600 to-blue-600">
             <Diamond className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="font-serif text-xl font-bold text-red-500">Private</h1>
-            <p className="text-xs text-zinc-400">Zone</p>
+            <h1 className="font-serif text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Private</h1>
+            <p className="text-xs text-slate-500">Zone</p>
           </div>
         </div>
 
         {/* Back to Main */}
-        <div className="px-3 py-4 border-b border-zinc-700">
+        <div className="px-3 py-4 border-b border-slate-200">
           <button
             onClick={() => router.push("/dashboard/settings")}
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
             Back to Settings
@@ -69,7 +69,7 @@ function PrivateSidebar() {
                 href={item.href}
                 className={cn(
                   "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
-                  isActive ? "bg-red-600/20 text-red-500" : "text-zinc-400 hover:bg-zinc-800 hover:text-white",
+                  isActive ? "bg-gradient-to-r from-purple-600 to-blue-600 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
                 )}
               >
                 <item.icon className="h-5 w-5" />
@@ -80,12 +80,12 @@ function PrivateSidebar() {
         </nav>
 
         {/* Warning */}
-        <div className="border-t border-zinc-700 p-4">
-          <div className="rounded-lg bg-red-600/10 border border-red-600/20 p-3">
-            <p className="text-xs text-red-400 text-center">
+        <div className="border-t border-slate-200 p-4">
+          <div className="rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 p-3">
+            <p className="text-xs text-purple-700 text-center font-medium">
               Confidential Area
               <br />
-              <span className="text-zinc-500">All transactions are private</span>
+              <span className="text-slate-600">All transactions are private</span>
             </p>
           </div>
         </div>
@@ -287,24 +287,24 @@ export default function PrivateZonePage() {
   )
 
   return (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50">
       <PrivateSidebar />
       <main className="pl-64">
         <div className="p-8">
           <div className="mb-8">
-            <h1 className="text-3xl font-serif font-bold text-white">Private Sale</h1>
-            <p className="text-zinc-400 mt-1">Confidential sales without GST documentation</p>
+            <h1 className="text-3xl font-serif font-bold bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Private Sale</h1>
+            <p className="text-slate-600 mt-1">Confidential sales without GST documentation</p>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="bg-zinc-800 border border-zinc-700">
-              <TabsTrigger value="girvi" className="data-[state=active]:bg-red-600 data-[state=active]:text-white">
+            <TabsList className="bg-white border border-slate-200 shadow-sm">
+              <TabsTrigger value="girvi" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white">
                 <Gavel className="h-4 w-4 mr-2" />
                 Girvi Private Sale
               </TabsTrigger>
               <TabsTrigger
                 value="most-private"
-                className="data-[state=active]:bg-red-600 data-[state=active]:text-white"
+                className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-blue-600 data-[state=active]:text-white"
               >
                 <Package className="h-4 w-4 mr-2" />
                 Most Private Sale
@@ -313,49 +313,49 @@ export default function PrivateZonePage() {
 
             {/* Girvi Private Sale Tab */}
             <TabsContent value="girvi" className="space-y-6">
-              <Card className="bg-zinc-900 border-zinc-800">
-                <CardHeader>
+              <Card className="bg-white border-slate-200 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600">
                   <CardTitle className="text-white font-serif">Auctioned Girvi Items</CardTitle>
-                  <CardDescription className="text-zinc-400">
+                  <CardDescription className="text-purple-100">
                     Select auctioned girvi items to sell privately (No GST)
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                   <div className="flex items-center gap-4 mb-6">
                     <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
                         placeholder="Search by item or customer name..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                        className="pl-10 bg-slate-50 border-slate-200"
                       />
                     </div>
                   </div>
 
-                  <div className="rounded-lg border border-zinc-800 overflow-hidden">
+                  <div className="rounded-lg border border-slate-200 overflow-hidden">
                     <Table>
                       <TableHeader>
-                        <TableRow className="border-zinc-800 hover:bg-zinc-800/50">
-                          <TableHead className="text-zinc-400">ID</TableHead>
-                          <TableHead className="text-zinc-400">Item</TableHead>
-                          <TableHead className="text-zinc-400">Original Customer</TableHead>
-                          <TableHead className="text-zinc-400">Metal/Weight</TableHead>
-                          <TableHead className="text-zinc-400">Loan Amount</TableHead>
-                          <TableHead className="text-zinc-400">Action</TableHead>
+                        <TableRow className="bg-slate-50 hover:bg-slate-100">
+                          <TableHead className="text-slate-700 font-semibold">ID</TableHead>
+                          <TableHead className="text-slate-700 font-semibold">Item</TableHead>
+                          <TableHead className="text-slate-700 font-semibold">Original Customer</TableHead>
+                          <TableHead className="text-slate-700 font-semibold">Metal/Weight</TableHead>
+                          <TableHead className="text-slate-700 font-semibold">Loan Amount</TableHead>
+                          <TableHead className="text-slate-700 font-semibold">Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredGirviItems.length > 0 ? (
                           filteredGirviItems.map((item) => (
-                            <TableRow key={item._id} className="border-zinc-800 hover:bg-zinc-800/50">
-                              <TableCell className="text-zinc-300 font-mono">{item._id.slice(-6)}</TableCell>
-                              <TableCell className="text-white font-medium">{item.item_name}</TableCell>
-                              <TableCell className="text-zinc-300">{item.customer_name}</TableCell>
-                              <TableCell className="text-zinc-300">
+                            <TableRow key={item._id} className="hover:bg-slate-50">
+                              <TableCell className="text-slate-600 font-mono">{item._id.slice(-6)}</TableCell>
+                              <TableCell className="text-slate-900 font-medium">{item.item_name}</TableCell>
+                              <TableCell className="text-slate-700">{item.customer_name}</TableCell>
+                              <TableCell className="text-slate-700">
                                 {item.metal_type} - {item.weight}g {item.purity && `(${item.purity})`}
                               </TableCell>
-                              <TableCell className="text-zinc-300">₹{item.loan_amount.toLocaleString()}</TableCell>
+                              <TableCell className="text-slate-700">₹{item.loan_amount.toLocaleString()}</TableCell>
                               <TableCell>
                                 <Dialog
                                   open={isDialogOpen && selectedItem?._id === item._id}
@@ -365,58 +365,58 @@ export default function PrivateZonePage() {
                                   }}
                                 >
                                   <DialogTrigger asChild>
-                                    <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                                    <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
                                       <ShoppingBag className="h-4 w-4 mr-1" />
                                       Sell
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="bg-zinc-900 border-zinc-800">
+                                  <DialogContent className="bg-white border-slate-200">
                                     <DialogHeader>
-                                      <DialogTitle className="text-white">Private Sale - {item.item_name}</DialogTitle>
-                                      <DialogDescription className="text-zinc-400">
+                                      <DialogTitle className="text-slate-900">Private Sale - {item.item_name}</DialogTitle>
+                                      <DialogDescription className="text-slate-600">
                                         This sale will not include GST or official documentation
                                       </DialogDescription>
                                     </DialogHeader>
                                     <div className="space-y-4 py-4">
-                                      <div className="p-3 rounded-lg bg-zinc-800 border border-zinc-700">
-                                        <p className="text-sm text-zinc-400">Item Details</p>
-                                        <p className="text-white font-medium">{item.item_name}</p>
-                                        <p className="text-sm text-zinc-400">
+                                      <div className="p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200">
+                                        <p className="text-sm text-slate-600">Item Details</p>
+                                        <p className="text-slate-900 font-medium">{item.item_name}</p>
+                                        <p className="text-sm text-slate-700">
                                           {item.metal_type} - {item.weight}g {item.purity && `- ${item.purity}`}
                                         </p>
-                                        <p className="text-sm text-zinc-400">
+                                        <p className="text-sm text-slate-700">
                                           Original Loan: ₹{item.loan_amount.toLocaleString()}
                                         </p>
                                       </div>
                                       <div className="space-y-2">
-                                        <Label className="text-zinc-300">Customer Name (Optional)</Label>
+                                        <Label className="text-slate-700">Customer Name (Optional)</Label>
                                         <Input
                                           placeholder="Cash Customer"
                                           value={saleForm.customerName}
                                           onChange={(e) => setSaleForm({ ...saleForm, customerName: e.target.value })}
-                                          className="bg-zinc-800 border-zinc-700 text-white"
+                                          className="bg-slate-50 border-slate-200"
                                         />
                                       </div>
                                       <div className="space-y-2">
-                                        <Label className="text-zinc-300">Sale Price *</Label>
+                                        <Label className="text-slate-700">Sale Price *</Label>
                                         <Input
                                           type="number"
                                           placeholder="Enter sale price"
                                           value={saleForm.salePrice}
                                           onChange={(e) => setSaleForm({ ...saleForm, salePrice: e.target.value })}
-                                          className="bg-zinc-800 border-zinc-700 text-white"
+                                          className="bg-slate-50 border-slate-200"
                                         />
                                       </div>
                                       <div className="space-y-2">
-                                        <Label className="text-zinc-300">Payment Method</Label>
+                                        <Label className="text-slate-700">Payment Method</Label>
                                         <Select
                                           value={saleForm.paymentMethod}
                                           onValueChange={(v) => setSaleForm({ ...saleForm, paymentMethod: v })}
                                         >
-                                          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                                          <SelectTrigger className="bg-slate-50 border-slate-200">
                                             <SelectValue />
                                           </SelectTrigger>
-                                          <SelectContent className="bg-zinc-800 border-zinc-700">
+                                          <SelectContent className="bg-white border-slate-200">
                                             <SelectItem value="Cash">Cash</SelectItem>
                                             <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                                           </SelectContent>
@@ -427,11 +427,11 @@ export default function PrivateZonePage() {
                                       <Button
                                         variant="outline"
                                         onClick={() => setIsDialogOpen(false)}
-                                        className="border-zinc-700 text-zinc-300"
+                                        className="border-slate-300 text-slate-700 hover:bg-slate-50"
                                       >
                                         Cancel
                                       </Button>
-                                      <Button onClick={handleSale} disabled={loading} className="bg-red-600 hover:bg-red-700">
+                                      <Button onClick={handleSale} disabled={loading} className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
                                         {loading ? "Processing..." : "Complete Sale"}
                                       </Button>
                                     </DialogFooter>
@@ -442,7 +442,7 @@ export default function PrivateZonePage() {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-zinc-500">
+                            <TableCell colSpan={6} className="text-center py-8 text-slate-500">
                               No auctioned girvi items available for private sale
                             </TableCell>
                           </TableRow>
@@ -456,51 +456,51 @@ export default function PrivateZonePage() {
 
             {/* Most Private Sale Tab */}
             <TabsContent value="most-private" className="space-y-6">
-              <Card className="bg-zinc-900 border-zinc-800">
-                <CardHeader>
+              <Card className="bg-white border-slate-200 shadow-lg">
+                <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600">
                   <CardTitle className="text-white font-serif">Normal Inventory - Private Sale</CardTitle>
-                  <CardDescription className="text-zinc-400">
+                  <CardDescription className="text-purple-100">
                     Sell normal inventory items privately without GST documentation
                   </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-6">
                   <div className="flex items-center gap-4 mb-6">
                     <div className="relative flex-1">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                       <Input
                         placeholder="Search inventory..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10 bg-zinc-800 border-zinc-700 text-white placeholder:text-zinc-500"
+                        className="pl-10 bg-slate-50 border-slate-200"
                       />
                     </div>
                   </div>
 
-                  <div className="rounded-lg border border-zinc-800 overflow-hidden">
+                  <div className="rounded-lg border border-slate-200 overflow-hidden">
                     <Table>
                       <TableHeader>
-                        <TableRow className="border-zinc-800 hover:bg-zinc-800/50">
-                          <TableHead className="text-zinc-400">ID</TableHead>
-                          <TableHead className="text-zinc-400">Item Name</TableHead>
-                          <TableHead className="text-zinc-400">Category</TableHead>
-                          <TableHead className="text-zinc-400">Metal/Weight</TableHead>
-                          <TableHead className="text-zinc-400">Purity</TableHead>
-                          <TableHead className="text-zinc-400">Price</TableHead>
-                          <TableHead className="text-zinc-400">Action</TableHead>
+                        <TableRow className="bg-slate-50 hover:bg-slate-100">
+                          <TableHead className="text-slate-700 font-semibold">ID</TableHead>
+                          <TableHead className="text-slate-700 font-semibold">Item Name</TableHead>
+                          <TableHead className="text-slate-700 font-semibold">Category</TableHead>
+                          <TableHead className="text-slate-700 font-semibold">Metal/Weight</TableHead>
+                          <TableHead className="text-slate-700 font-semibold">Purity</TableHead>
+                          <TableHead className="text-slate-700 font-semibold">Price</TableHead>
+                          <TableHead className="text-slate-700 font-semibold">Action</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredNormalItems.length > 0 ? (
                           filteredNormalItems.map((item) => (
-                            <TableRow key={item._id} className="border-zinc-800 hover:bg-zinc-800/50">
-                              <TableCell className="text-zinc-300 font-mono">{item._id.slice(-6)}</TableCell>
-                              <TableCell className="text-white font-medium">{item.item_name}</TableCell>
-                              <TableCell className="text-zinc-300">{item.category}</TableCell>
-                              <TableCell className="text-zinc-300">
+                            <TableRow key={item._id} className="hover:bg-slate-50">
+                              <TableCell className="text-slate-600 font-mono">{item._id.slice(-6)}</TableCell>
+                              <TableCell className="text-slate-900 font-medium">{item.item_name}</TableCell>
+                              <TableCell className="text-slate-700">{item.category}</TableCell>
+                              <TableCell className="text-slate-700">
                                 {item.metal_type || "N/A"} - {item.weight ? `${item.weight}g` : "N/A"}
                               </TableCell>
-                              <TableCell className="text-zinc-300">{item.purity || "N/A"}</TableCell>
-                              <TableCell className="text-zinc-300">₹{item.rate.toLocaleString()}</TableCell>
+                              <TableCell className="text-slate-700">{item.purity || "N/A"}</TableCell>
+                              <TableCell className="text-slate-700">₹{item.rate.toLocaleString()}</TableCell>
                               <TableCell>
                                 <Dialog
                                   open={isDialogOpen && selectedItem?._id === item._id}
@@ -510,58 +510,58 @@ export default function PrivateZonePage() {
                                   }}
                                 >
                                   <DialogTrigger asChild>
-                                    <Button size="sm" className="bg-red-600 hover:bg-red-700">
+                                    <Button size="sm" className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
                                       <ShoppingBag className="h-4 w-4 mr-1" />
                                       Sell
                                     </Button>
                                   </DialogTrigger>
-                                  <DialogContent className="bg-zinc-900 border-zinc-800">
+                                  <DialogContent className="bg-white border-slate-200">
                                     <DialogHeader>
-                                      <DialogTitle className="text-white">Private Sale - {item.item_name}</DialogTitle>
-                                      <DialogDescription className="text-zinc-400">
+                                      <DialogTitle className="text-slate-900">Private Sale - {item.item_name}</DialogTitle>
+                                      <DialogDescription className="text-slate-600">
                                         This sale will not include GST or official documentation
                                       </DialogDescription>
                                     </DialogHeader>
                                     <div className="space-y-4 py-4">
-                                      <div className="p-3 rounded-lg bg-zinc-800 border border-zinc-700">
-                                        <p className="text-sm text-zinc-400">Item Details</p>
-                                        <p className="text-white font-medium">{item.item_name}</p>
-                                        <p className="text-sm text-zinc-400">
+                                      <div className="p-3 rounded-lg bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200">
+                                        <p className="text-sm text-slate-600">Item Details</p>
+                                        <p className="text-slate-900 font-medium">{item.item_name}</p>
+                                        <p className="text-sm text-slate-700">
                                           {item.metal_type || "N/A"} - {item.weight ? `${item.weight}g` : "N/A"} - {item.purity || "N/A"}
                                         </p>
-                                        <p className="text-sm text-zinc-400">
+                                        <p className="text-sm text-slate-700">
                                           Listed Price: ₹{item.rate.toLocaleString()}
                                         </p>
                                       </div>
                                       <div className="space-y-2">
-                                        <Label className="text-zinc-300">Customer Name (Optional)</Label>
+                                        <Label className="text-slate-700">Customer Name (Optional)</Label>
                                         <Input
                                           placeholder="Cash Customer"
                                           value={saleForm.customerName}
                                           onChange={(e) => setSaleForm({ ...saleForm, customerName: e.target.value })}
-                                          className="bg-zinc-800 border-zinc-700 text-white"
+                                          className="bg-slate-50 border-slate-200"
                                         />
                                       </div>
                                       <div className="space-y-2">
-                                        <Label className="text-zinc-300">Sale Price *</Label>
+                                        <Label className="text-slate-700">Sale Price *</Label>
                                         <Input
                                           type="number"
                                           placeholder="Enter sale price"
                                           value={saleForm.salePrice}
                                           onChange={(e) => setSaleForm({ ...saleForm, salePrice: e.target.value })}
-                                          className="bg-zinc-800 border-zinc-700 text-white"
+                                          className="bg-slate-50 border-slate-200"
                                         />
                                       </div>
                                       <div className="space-y-2">
-                                        <Label className="text-zinc-300">Payment Method</Label>
+                                        <Label className="text-slate-700">Payment Method</Label>
                                         <Select
                                           value={saleForm.paymentMethod}
                                           onValueChange={(v) => setSaleForm({ ...saleForm, paymentMethod: v })}
                                         >
-                                          <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white">
+                                          <SelectTrigger className="bg-slate-50 border-slate-200">
                                             <SelectValue />
                                           </SelectTrigger>
-                                          <SelectContent className="bg-zinc-800 border-zinc-700">
+                                          <SelectContent className="bg-white border-slate-200">
                                             <SelectItem value="Cash">Cash</SelectItem>
                                             <SelectItem value="Bank Transfer">Bank Transfer</SelectItem>
                                           </SelectContent>
@@ -572,11 +572,11 @@ export default function PrivateZonePage() {
                                       <Button
                                         variant="outline"
                                         onClick={() => setIsDialogOpen(false)}
-                                        className="border-zinc-700 text-zinc-300"
+                                        className="border-slate-300 text-slate-700 hover:bg-slate-50"
                                       >
                                         Cancel
                                       </Button>
-                                      <Button onClick={handleSale} disabled={loading} className="bg-red-600 hover:bg-red-700">
+                                      <Button onClick={handleSale} disabled={loading} className="bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700">
                                         {loading ? "Processing..." : "Complete Sale"}
                                       </Button>
                                     </DialogFooter>
@@ -587,7 +587,7 @@ export default function PrivateZonePage() {
                           ))
                         ) : (
                           <TableRow>
-                            <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
+                            <TableCell colSpan={7} className="text-center py-8 text-slate-500">
                               No inventory items available for private sale
                             </TableCell>
                           </TableRow>
@@ -601,48 +601,48 @@ export default function PrivateZonePage() {
           </Tabs>
 
           {/* Recent Private Sales */}
-          <Card className="mt-6 bg-zinc-900 border-zinc-800">
-            <CardHeader>
+          <Card className="mt-6 bg-white border-slate-200 shadow-lg">
+            <CardHeader className="bg-gradient-to-r from-purple-600 to-blue-600">
               <CardTitle className="text-white font-serif">Recent Private Sales</CardTitle>
-              <CardDescription className="text-zinc-400">Latest confidential transactions</CardDescription>
+              <CardDescription className="text-purple-100">Latest confidential transactions</CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="rounded-lg border border-zinc-800 overflow-hidden">
+            <CardContent className="pt-6">
+              <div className="rounded-lg border border-slate-200 overflow-hidden">
                 <Table>
                   <TableHeader>
-                    <TableRow className="border-zinc-800 hover:bg-zinc-800/50">
-                      <TableHead className="text-zinc-400">ID</TableHead>
-                      <TableHead className="text-zinc-400">Type</TableHead>
-                      <TableHead className="text-zinc-400">Item</TableHead>
-                      <TableHead className="text-zinc-400">Customer</TableHead>
-                      <TableHead className="text-zinc-400">Amount</TableHead>
-                      <TableHead className="text-zinc-400">Date</TableHead>
-                      <TableHead className="text-zinc-400">Payment</TableHead>
+                    <TableRow className="bg-slate-50 hover:bg-slate-100">
+                      <TableHead className="text-slate-700 font-semibold">ID</TableHead>
+                      <TableHead className="text-slate-700 font-semibold">Type</TableHead>
+                      <TableHead className="text-slate-700 font-semibold">Item</TableHead>
+                      <TableHead className="text-slate-700 font-semibold">Customer</TableHead>
+                      <TableHead className="text-slate-700 font-semibold">Amount</TableHead>
+                      <TableHead className="text-slate-700 font-semibold">Date</TableHead>
+                      <TableHead className="text-slate-700 font-semibold">Payment</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {privateSales.slice(0, 10).map((sale) => (
-                      <TableRow key={sale._id} className="border-zinc-800 hover:bg-zinc-800/50">
-                        <TableCell className="text-zinc-300 font-mono">{sale._id.slice(-6)}</TableCell>
+                      <TableRow key={sale._id} className="hover:bg-slate-50">
+                        <TableCell className="text-slate-600 font-mono">{sale._id.slice(-6)}</TableCell>
                         <TableCell>
-                          <Badge className={sale.sale_type === "girvi" ? "bg-orange-600" : "bg-purple-600"}>
+                          <Badge className={sale.sale_type === "girvi" ? "bg-orange-100 text-orange-700" : "bg-purple-100 text-purple-700"}>
                             {sale.sale_type === "girvi" ? "Girvi" : "Most Private"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-white font-medium">{sale.item_name}</TableCell>
-                        <TableCell className="text-zinc-300">{sale.customer_name || "Cash Customer"}</TableCell>
-                        <TableCell className="text-green-400 font-semibold">
+                        <TableCell className="text-slate-900 font-medium">{sale.item_name}</TableCell>
+                        <TableCell className="text-slate-700">{sale.customer_name || "Cash Customer"}</TableCell>
+                        <TableCell className="text-green-600 font-semibold">
                           ₹{sale.total_amount.toLocaleString()}
                         </TableCell>
-                        <TableCell className="text-zinc-300">
+                        <TableCell className="text-slate-700">
                           {new Date(sale.sale_date).toLocaleDateString()}
                         </TableCell>
-                        <TableCell className="text-zinc-300">{sale.payment_mode}</TableCell>
+                        <TableCell className="text-slate-700">{sale.payment_mode}</TableCell>
                       </TableRow>
                     ))}
                     {privateSales.length === 0 && (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-zinc-500">
+                        <TableCell colSpan={7} className="text-center py-8 text-slate-500">
                           No private sales yet
                         </TableCell>
                       </TableRow>

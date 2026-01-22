@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Label } from "@/components/ui/label"
 import {
   IndianRupee,
   TrendingUp,
@@ -16,6 +18,7 @@ import {
   FileText,
   Search,
   Calendar,
+  Download,
 } from "lucide-react"
 
 interface Transaction {
@@ -51,6 +54,10 @@ export default function ReportsPage() {
   const [girvi, setGirvi] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [startDate, setStartDate] = useState("")
+  const [endDate, setEndDate] = useState("")
+  const [selectedPaymentStatus, setSelectedPaymentStatus] = useState("all")
+  const [selectedTransactionType, setSelectedTransactionType] = useState("all")
 
   useEffect(() => {
     fetchAllData()
@@ -115,6 +122,10 @@ export default function ReportsPage() {
       description: `Sale - ${s.invoice_no}`,
       payment_method: s.payment_method,
       status: s.payment_status,
+      invoice_no: s.invoice_no,
+      customer_name: s.customer_name,
+      amount_paid: s.amount_paid,
+      amount_pending: s.amount_pending,
     })),
     ...purchases.map((p) => ({
       _id: p._id,
@@ -123,7 +134,11 @@ export default function ReportsPage() {
       amount: p.total_amount,
       description: `Purchase - ${p.supplier_name}`,
       payment_method: p.payment_mode,
-      status: "completed",
+      status: p.payment_status || "completed",
+      invoice_no: p.invoice_number || "N/A",
+      customer_name: p.supplier_name,
+      amount_paid: p.amount_paid || p.total_amount,
+      amount_pending: 0,
     })),
     ...girvi.map((g) => ({
       _id: g._id,
@@ -133,12 +148,122 @@ export default function ReportsPage() {
       description: `Girvi - ${g.customer_name}`,
       payment_method: "cash",
       status: g.status,
+      invoice_no: g.girvi_no || "N/A",
+      customer_name: g.customer_name,
+      amount_paid: g.amount,
+      amount_pending: 0,
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
-  const filteredTransactions = allTransactions.filter((t) =>
-    t.description.toLowerCase().includes(searchQuery.toLowerCase())
-  )
+  const filteredTransactions = allTransactions.filter((t) => {
+    const matchesSearch = t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      t.invoice_no.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    const matchesDateRange = (!startDate || new Date(t.date) >= new Date(startDate)) &&
+      (!endDate || new Date(t.date) <= new Date(endDate))
+    
+    const matchesPaymentStatus = selectedPaymentStatus === "all" || 
+      t.status?.toLowerCase() === selectedPaymentStatus.toLowerCase()
+    
+    const matchesTransactionType = selectedTransactionType === "all" ||
+      t.type === selectedTransactionType
+    
+    return matchesSearch && matchesDateRange && matchesPaymentStatus && matchesTransactionType
+  })
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString)
+    return date.toLocaleString("en-IN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+  }
+
+  const exportToCSV = () => {
+    const headers = ["Transaction ID", "Date & Time", "Bill No.", "Transaction", "Amount", "Mode", "Payment Status", "Customer"]
+    const csvData = filteredTransactions.map(t => [
+      t._id,
+      formatDateTime(t.date),
+      t.invoice_no,
+      t.type.toUpperCase(),
+      t.amount,
+      t.payment_method?.toUpperCase() || "N/A",
+      t.status?.toUpperCase() || "N/A",
+      t.customer_name || "N/A",
+    ])
+    
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map(row => row.join(","))
+    ].join("\n")
+    
+    const blob = new Blob([csvContent], { type: "text/csv" })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `transactions_${new Date().toISOString().split("T")[0]}.csv`
+    a.click()
+  }
+
+  const exportTrendsToCSV = () => {
+    const headers = ["Date", "Total Payments", "Total Refunds", "Net Collection", "Total Dues", "Cash Payments", "Card Payments", "UPI Payments", "Bank Transfer", "Others", "Girvi", "Transactions"]
+    const csvData = [[
+      formatDate(new Date().toISOString()),
+      todayTotalSales,
+      0,
+      todayTotalSales,
+      todaySales.reduce((sum, s) => sum + (s.amount_pending || 0), 0),
+      todaySales.filter(s => s.payment_method?.toLowerCase() === 'cash').reduce((sum, s) => sum + (s.amount_paid || 0), 0),
+      todaySales.filter(s => s.payment_method?.toLowerCase() === 'card').reduce((sum, s) => sum + (s.amount_paid || 0), 0),
+      todaySales.filter(s => s.payment_method?.toLowerCase() === 'upi').reduce((sum, s) => sum + (s.amount_paid || 0), 0),
+      todaySales.filter(s => s.payment_method?.toLowerCase() === 'bank_transfer').reduce((sum, s) => sum + (s.amount_paid || 0), 0),
+      todaySales.filter(s => !['cash', 'card', 'upi', 'bank_transfer'].includes(s.payment_method?.toLowerCase() || '')).reduce((sum, s) => sum + (s.amount_paid || 0), 0),
+      todayTotalGirvi,
+      todaySales.length + todayPurchases.length + todayGirvi.length,
+    ]]
+    
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map(row => row.join(","))
+    ].join("\n")
+    
+    const blob = new Blob([csvContent], { type: "text/csv" })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `trends_${new Date().toISOString().split("T")[0]}.csv`
+    a.click()
+  }
+
+  const exportSummaryToCSV = () => {
+    const headers = ["Type", "Metric", "Value", "Count"]
+    const csvData = [
+      ["Sales", "Total Sales", totalSales, sales.length],
+      ["Purchases", "Total Purchases", totalPurchases, purchases.length],
+      ["Girvi", "Total Girvi", totalGirvi, girvi.length],
+      ["Revenue", "Net Revenue", totalRevenue - totalExpenses, "-"],
+      ["Payment", "Cash Received", sales.filter(s => s.payment_method?.toLowerCase() === 'cash').reduce((sum, s) => sum + (s.amount_paid || 0), 0), "-"],
+      ["Payment", "Card Received", sales.filter(s => s.payment_method?.toLowerCase() === 'card').reduce((sum, s) => sum + (s.amount_paid || 0), 0), "-"],
+      ["Payment", "UPI Received", sales.filter(s => s.payment_method?.toLowerCase() === 'upi').reduce((sum, s) => sum + (s.amount_paid || 0), 0), "-"],
+      ["Payment", "Bank Transfer Received", sales.filter(s => s.payment_method?.toLowerCase() === 'bank_transfer').reduce((sum, s) => sum + (s.amount_paid || 0), 0), "-"],
+    ]
+    
+    const csvContent = [
+      headers.join(","),
+      ...csvData.map(row => row.join(","))
+    ].join("\n")
+    
+    const blob = new Blob([csvContent], { type: "text/csv" })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = `summary_${new Date().toISOString().split("T")[0]}.csv`
+    a.click()
+  }
 
   return (
     <div className="min-h-screen bg-background p-8">
@@ -165,6 +290,70 @@ export default function ReportsPage() {
 
         {/* Summary Tab */}
         <TabsContent value="summary" className="mt-6">
+          {/* Filters */}
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="space-y-2">
+                  <Label htmlFor="summary-start-date" className="text-sm font-medium">Start Date</Label>
+                  <Input
+                    id="summary-start-date"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    placeholder="dd-mm-yyyy"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="summary-end-date" className="text-sm font-medium">End Date</Label>
+                  <Input
+                    id="summary-end-date"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    placeholder="dd-mm-yyyy"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="summary-transaction-type" className="text-sm font-medium">Transaction Type</Label>
+                  <Select value={selectedTransactionType} onValueChange={setSelectedTransactionType}>
+                    <SelectTrigger id="summary-transaction-type">
+                      <SelectValue placeholder="All Transactions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Transactions</SelectItem>
+                      <SelectItem value="sale">SALE</SelectItem>
+                      <SelectItem value="purchase">PURCHASE</SelectItem>
+                      <SelectItem value="girvi">GIRVI</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="summary-payment-status" className="text-sm font-medium">Payment Status</Label>
+                  <Select value={selectedPaymentStatus} onValueChange={setSelectedPaymentStatus}>
+                    <SelectTrigger id="summary-payment-status">
+                      <SelectValue placeholder="All Payments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Payments</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="partial">Partial</SelectItem>
+                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center justify-end">
+                <Button onClick={exportSummaryToCSV} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Summary Stats */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
@@ -216,6 +405,61 @@ export default function ReportsPage() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Payment Methods Breakdown */}
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <h2 className="font-serif text-2xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 rounded-lg">
+                Payment Methods Breakdown
+              </h2>
+              
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Payments Received */}
+                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
+                  <h3 className="font-semibold text-lg mb-4 text-green-700">Payments Received</h3>
+                  <div className="space-y-3">
+                    <div className="bg-white rounded-lg p-4 flex items-center justify-between">
+                      <span className="font-medium text-gray-700">CASH</span>
+                      <span className="font-bold text-green-600 text-xl">
+                        {formatCurrency(sales.filter(s => s.payment_method?.toLowerCase() === 'cash').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                      </span>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 flex items-center justify-between">
+                      <span className="font-medium text-gray-700">UPI</span>
+                      <span className="font-bold text-green-600 text-xl">
+                        {formatCurrency(sales.filter(s => s.payment_method?.toLowerCase() === 'upi').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                      </span>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 flex items-center justify-between">
+                      <span className="font-medium text-gray-700">CARD</span>
+                      <span className="font-bold text-green-600 text-xl">
+                        {formatCurrency(sales.filter(s => s.payment_method?.toLowerCase() === 'card').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                      </span>
+                    </div>
+                    <div className="bg-white rounded-lg p-4 flex items-center justify-between">
+                      <span className="font-medium text-gray-700">BANK TRANSFER</span>
+                      <span className="font-bold text-green-600 text-xl">
+                        {formatCurrency(sales.filter(s => s.payment_method?.toLowerCase() === 'bank_transfer').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Refunds Given */}
+                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6">
+                  <h3 className="font-semibold text-lg mb-4 text-red-700">Refunds Given</h3>
+                  <div className="space-y-3">
+                    <div className="bg-white rounded-lg p-4 flex items-center justify-between">
+                      <span className="font-medium text-gray-700">CASH</span>
+                      <span className="font-bold text-red-600 text-xl">
+                        {formatCurrency(0)}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* History Tables */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -297,184 +541,335 @@ export default function ReportsPage() {
 
         {/* Trends Tab */}
         <TabsContent value="trends" className="mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <IndianRupee className="h-5 w-5 text-green-600" />
+          {/* Filters */}
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="space-y-2">
+                  <Label htmlFor="trends-start-date" className="text-sm font-medium">Start Date</Label>
+                  <Input
+                    id="trends-start-date"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    placeholder="dd-mm-yyyy"
+                  />
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Today's Sales</p>
-                  <p className="text-2xl font-bold">{formatCurrency(todayTotalSales)}</p>
-                  <p className="text-xs text-muted-foreground">{todaySales.length} orders</p>
+                <div className="space-y-2">
+                  <Label htmlFor="trends-end-date" className="text-sm font-medium">End Date</Label>
+                  <Input
+                    id="trends-end-date"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    placeholder="dd-mm-yyyy"
+                  />
                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <ShoppingCart className="h-5 w-5 text-blue-600" />
+                <div className="space-y-2">
+                  <Label htmlFor="trends-transaction-type" className="text-sm font-medium">Transaction Type</Label>
+                  <Select value={selectedTransactionType} onValueChange={setSelectedTransactionType}>
+                    <SelectTrigger id="trends-transaction-type">
+                      <SelectValue placeholder="All Transactions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Transactions</SelectItem>
+                      <SelectItem value="sale">SALE</SelectItem>
+                      <SelectItem value="purchase">PURCHASE</SelectItem>
+                      <SelectItem value="girvi">GIRVI</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Today's Purchases</p>
-                  <p className="text-2xl font-bold">{formatCurrency(todayTotalPurchases)}</p>
-                  <p className="text-xs text-muted-foreground">{todayPurchases.length} items</p>
+                <div className="space-y-2">
+                  <Label htmlFor="trends-payment-status" className="text-sm font-medium">Payment Status</Label>
+                  <Select value={selectedPaymentStatus} onValueChange={setSelectedPaymentStatus}>
+                    <SelectTrigger id="trends-payment-status">
+                      <SelectValue placeholder="All Payments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Payments</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="partial">Partial</SelectItem>
+                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                  <Package className="h-5 w-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Today's Girvi</p>
-                  <p className="text-2xl font-bold">{formatCurrency(todayTotalGirvi)}</p>
-                  <p className="text-xs text-muted-foreground">{todayGirvi.length} items</p>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-lg bg-red-100 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-red-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Total Dues</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalDues)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    Sales: {formatCurrency(salesDues)} | Girvi: {formatCurrency(girviDues)}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <div className="flex items-center justify-end">
+                <Button onClick={exportTrendsToCSV} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
           <Card>
             <CardContent className="p-6">
-              <h3 className="font-semibold text-lg mb-4">Daily Trends</h3>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Metric</TableHead>
-                    <TableHead>Today</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead>Average</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow>
-                    <TableCell className="font-medium">Sales</TableCell>
-                    <TableCell>{formatCurrency(todayTotalSales)}</TableCell>
-                    <TableCell>{formatCurrency(totalSales)}</TableCell>
-                    <TableCell>{formatCurrency(sales.length > 0 ? totalSales / sales.length : 0)}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Purchases</TableCell>
-                    <TableCell>{formatCurrency(todayTotalPurchases)}</TableCell>
-                    <TableCell>{formatCurrency(totalPurchases)}</TableCell>
-                    <TableCell>{formatCurrency(purchases.length > 0 ? totalPurchases / purchases.length : 0)}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Girvi</TableCell>
-                    <TableCell>{formatCurrency(todayTotalGirvi)}</TableCell>
-                    <TableCell>{formatCurrency(totalGirvi)}</TableCell>
-                    <TableCell>{formatCurrency(girvi.length > 0 ? totalGirvi / girvi.length : 0)}</TableCell>
-                  </TableRow>
-                  <TableRow>
-                    <TableCell className="font-medium">Dues/Payments</TableCell>
-                    <TableCell>-</TableCell>
-                    <TableCell>{formatCurrency(totalDues)}</TableCell>
-                    <TableCell>{pendingGirvi.length} pending</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
+                <TrendingUp className="h-5 w-5" />
+                Daily Trends
+              </h3>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="whitespace-nowrap">Date</TableHead>
+                      <TableHead className="whitespace-nowrap">Total Payments</TableHead>
+                      <TableHead className="whitespace-nowrap">Total Refunds</TableHead>
+                      <TableHead className="whitespace-nowrap">Net Collection</TableHead>
+                      <TableHead className="whitespace-nowrap">Total Dues</TableHead>
+                      <TableHead className="whitespace-nowrap">Cash Payments</TableHead>
+                      <TableHead className="whitespace-nowrap">Card Payments</TableHead>
+                      <TableHead className="whitespace-nowrap">UPI Payments</TableHead>
+                      <TableHead className="whitespace-nowrap">Bank Transfer</TableHead>
+                      <TableHead className="whitespace-nowrap">Others</TableHead>
+                      <TableHead className="whitespace-nowrap">Girvi</TableHead>
+                      <TableHead className="whitespace-nowrap">Transactions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={12} className="text-center py-8">Loading trends...</TableCell>
+                      </TableRow>
+                    ) : (
+                      <>
+                        {/* Today's Row */}
+                        <TableRow>
+                          <TableCell className="font-medium whitespace-nowrap">{formatDate(new Date().toISOString())}</TableCell>
+                          <TableCell className="text-green-600 font-semibold whitespace-nowrap">
+                            {formatCurrency(todayTotalSales)}
+                          </TableCell>
+                          <TableCell className="text-red-600 font-semibold whitespace-nowrap">
+                            {formatCurrency(0)}
+                          </TableCell>
+                          <TableCell className="text-blue-600 font-semibold whitespace-nowrap">
+                            {formatCurrency(todayTotalSales)}
+                          </TableCell>
+                          <TableCell className="text-amber-600 font-semibold whitespace-nowrap">
+                            {formatCurrency(todaySales.reduce((sum, s) => sum + (s.amount_pending || 0), 0))}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {formatCurrency(todaySales.filter(s => s.payment_method?.toLowerCase() === 'cash').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {formatCurrency(todaySales.filter(s => s.payment_method?.toLowerCase() === 'card').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {formatCurrency(todaySales.filter(s => s.payment_method?.toLowerCase() === 'upi').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {formatCurrency(todaySales.filter(s => s.payment_method?.toLowerCase() === 'bank_transfer').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap">
+                            {formatCurrency(todaySales.filter(s => !['cash', 'card', 'upi', 'bank_transfer'].includes(s.payment_method?.toLowerCase() || '')).reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                          </TableCell>
+                          <TableCell className="text-amber-600 font-semibold whitespace-nowrap">
+                            {formatCurrency(todayTotalGirvi)}
+                          </TableCell>
+                          <TableCell className="font-semibold whitespace-nowrap">
+                            {todaySales.length + todayPurchases.length + todayGirvi.length}
+                          </TableCell>
+                        </TableRow>
+                        {/* Additional historical rows can be added here */}
+                        {sales.length === 0 && purchases.length === 0 && girvi.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
+                              No data available for trends
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         {/* Transactions Tab */}
         <TabsContent value="transactions" className="mt-6">
+          {/* Filters */}
           <Card className="mb-6">
             <CardContent className="p-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search transactions..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-9"
-                />
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start-date" className="text-sm font-medium">Start Date</Label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    placeholder="dd-mm-yyyy"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end-date" className="text-sm font-medium">End Date</Label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    placeholder="dd-mm-yyyy"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="transaction-type" className="text-sm font-medium">Transaction Type</Label>
+                  <Select value={selectedTransactionType} onValueChange={setSelectedTransactionType}>
+                    <SelectTrigger id="transaction-type">
+                      <SelectValue placeholder="All Transactions" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Transactions</SelectItem>
+                      <SelectItem value="sale">SALE</SelectItem>
+                      <SelectItem value="purchase">PURCHASE</SelectItem>
+                      <SelectItem value="girvi">GIRVI</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payment-status" className="text-sm font-medium">Payment Status</Label>
+                  <Select value={selectedPaymentStatus} onValueChange={setSelectedPaymentStatus}>
+                    <SelectTrigger id="payment-status">
+                      <SelectValue placeholder="All Payments" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Payments</SelectItem>
+                      <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="partial">Partial</SelectItem>
+                      <SelectItem value="unpaid">Unpaid</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center justify-end">
+                <Button onClick={exportToCSV} className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export CSV
+                </Button>
               </div>
             </CardContent>
           </Card>
 
+          {/* All Transactions Table */}
           <Card>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Payment</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8">Loading transactions...</TableCell>
+            <CardContent className="p-6">
+              <h3 className="font-semibold text-lg mb-4 flex items-center gap-2 text-primary">
+                <FileText className="h-5 w-5" />
+                All Transactions
+              </h3>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50">
+                      <TableHead className="whitespace-nowrap">Transaction ID</TableHead>
+                      <TableHead className="whitespace-nowrap">Date & Time</TableHead>
+                      <TableHead className="whitespace-nowrap">Bill No.</TableHead>
+                      <TableHead className="whitespace-nowrap">Transaction</TableHead>
+                      <TableHead className="whitespace-nowrap">Amount</TableHead>
+                      <TableHead className="whitespace-nowrap">Mode</TableHead>
+                      <TableHead className="whitespace-nowrap">Booking Status</TableHead>
+                      <TableHead className="whitespace-nowrap">Payment Status</TableHead>
+                      <TableHead className="whitespace-nowrap">Booking Details</TableHead>
                     </TableRow>
-                  ) : filteredTransactions.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                        No transactions found
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredTransactions.map((transaction) => (
-                      <TableRow key={transaction._id}>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={
-                              transaction.type === "sale"
-                                ? "bg-green-100 text-green-700"
-                                : transaction.type === "purchase"
-                                  ? "bg-blue-100 text-blue-700"
-                                  : "bg-amber-100 text-amber-700"
-                            }
-                          >
-                            {transaction.type.toUpperCase()}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-medium">{transaction.description}</TableCell>
-                        <TableCell>{formatDate(transaction.date)}</TableCell>
-                        <TableCell className="font-semibold">{formatCurrency(transaction.amount)}</TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{transaction.payment_method?.toUpperCase() || "N/A"}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={transaction.status === "paid" || transaction.status === "completed" ? "default" : "secondary"}
-                            className={
-                              transaction.status === "paid" || transaction.status === "completed"
-                                ? "bg-green-100 text-green-700"
-                                : transaction.status === "active"
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-gray-100 text-gray-700"
-                            }
-                          >
-                            {transaction.status}
-                          </Badge>
+                  </TableHeader>
+                  <TableBody>
+                    {loading ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-8">Loading transactions...</TableCell>
+                      </TableRow>
+                    ) : filteredTransactions.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                          No transactions found
                         </TableCell>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
+                    ) : (
+                      filteredTransactions.map((transaction) => (
+                        <TableRow key={transaction._id}>
+                          <TableCell className="font-mono text-xs whitespace-nowrap">
+                            {transaction._id.slice(-12).toUpperCase()}
+                          </TableCell>
+                          <TableCell className="whitespace-nowrap text-sm">
+                            {formatDateTime(transaction.date)}
+                          </TableCell>
+                          <TableCell className="text-primary font-medium whitespace-nowrap">
+                            {transaction.invoice_no}
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className={
+                                transaction.type === "sale"
+                                  ? "bg-green-100 text-green-700"
+                                  : transaction.type === "purchase"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "bg-amber-100 text-amber-700"
+                              }
+                            >
+                              {transaction.type.toUpperCase()}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="font-semibold whitespace-nowrap">
+                            {formatCurrency(transaction.amount)}
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="uppercase">
+                              {transaction.payment_method?.toUpperCase() || "N/A"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="default"
+                              className={
+                                transaction.status === "active" || transaction.status === "completed"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-100 text-gray-700"
+                              }
+                            >
+                              {transaction.status === "active" || transaction.type === "girvi" ? "ACTIVE" : "COMPLETED"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={transaction.status === "paid" || transaction.status === "completed" ? "default" : "secondary"}
+                              className={
+                                transaction.status === "paid" || transaction.status === "completed"
+                                  ? "bg-green-100 text-green-700"
+                                  : transaction.status === "partial"
+                                    ? "bg-amber-100 text-amber-700"
+                                    : "bg-red-100 text-red-700"
+                              }
+                            >
+                              {transaction.amount_pending && transaction.amount_pending > 0
+                                ? `PARTIAL: ${formatCurrency(transaction.amount_pending)}`
+                                : transaction.status?.toUpperCase() || "PAID"}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            <div>
+                              <p className="font-medium">Total: {formatCurrency(transaction.amount)}</p>
+                              <p className="text-muted-foreground text-xs">
+                                Paid: {formatCurrency(transaction.amount_paid || 0)}
+                              </p>
+                              {transaction.amount_pending > 0 && (
+                                <p className="text-red-600 text-xs">
+                                  Due: {formatCurrency(transaction.amount_pending)}
+                                </p>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

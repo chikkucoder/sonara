@@ -14,7 +14,11 @@ export async function GET(request: Request) {
     const userId = (session.user as any).id
     await dbConnect()
 
-    const girvi = await Girvi.find({ user_id: userId })
+    // Exclude girvi items that have been sold privately
+    const girvi = await Girvi.find({ 
+      user_id: userId,
+      status: { $ne: "sold_private" } // Exclude private sales
+    })
       .sort({ date: -1, created_at: -1 })
       .lean()
 

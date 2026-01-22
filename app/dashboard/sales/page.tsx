@@ -447,57 +447,51 @@ export default function SalesPage() {
               </Card>
 
               {/* Product Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
                 {loading ? (
                   <p className="col-span-full text-center text-muted-foreground">Loading products...</p>
                 ) : !Array.isArray(filteredProducts) || filteredProducts.length === 0 ? (
                   <p className="col-span-full text-center text-muted-foreground">No products found</p>
                 ) : (
                   filteredProducts.map((product) => (
-                    <Card key={product._id} className="hover:shadow-lg transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg mb-1">{product.item_name}</h3>
+                    <Card key={product._id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-sm mb-1 truncate">{product.item_name}</h3>
                             <Badge variant="outline" className="text-xs">
                               {product.category}
                             </Badge>
                           </div>
-                          <Package className="h-5 w-5 text-muted-foreground" />
+                          <Package className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-1" />
                         </div>
 
-                        <div className="space-y-2 mb-3">
+                        <div className="space-y-1 mb-2 text-xs">
                           {product.purity && (
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between">
                               <span className="text-muted-foreground">Purity:</span>
                               <span className="font-medium">{product.purity}</span>
                             </div>
                           )}
-                          {product.weight && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Weight:</span>
-                              <span className="font-medium">{product.weight}g</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between text-sm">
+                          <div className="flex justify-between">
                             <span className="text-muted-foreground">Stock:</span>
                             <span className={`font-medium ${(product.available_quantity ?? product.quantity) < 5 ? "text-red-600" : "text-green-600"}`}>
                               {product.available_quantity ?? product.quantity} units
                             </span>
                           </div>
-                          <div className="flex justify-between">
+                          <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Price:</span>
-                            <span className="font-bold text-primary text-lg">{formatCurrency(product.rate)}</span>
+                            <span className="font-bold text-primary text-sm">{formatCurrency(product.rate)}</span>
                           </div>
                         </div>
 
                         <Button
                           onClick={() => addToCart(product)}
-                          className="w-full"
+                          className="w-full h-8 text-xs"
                           disabled={(product.available_quantity ?? product.quantity) === 0}
                           size="sm"
                         >
-                          <Plus className="h-4 w-4 mr-2" />
+                          <Plus className="h-3 w-3 mr-1" />
                           Add to Cart
                         </Button>
                       </CardContent>
@@ -758,57 +752,51 @@ export default function SalesPage() {
               </Card>
 
               {/* Product Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
                 {loading ? (
                   <p className="col-span-full text-center text-muted-foreground">Loading products...</p>
                 ) : !Array.isArray(filteredProducts) || filteredProducts.length === 0 ? (
                   <p className="col-span-full text-center text-muted-foreground">No products found</p>
                 ) : (
                   filteredProducts.map((product) => (
-                    <Card key={product._id} className="hover:shadow-lg transition-shadow">
-                      <CardContent className="p-4">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h3 className="font-semibold text-lg mb-1">{product.item_name}</h3>
+                    <Card key={product._id} className="hover:shadow-md transition-shadow">
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-sm mb-1 truncate">{product.item_name}</h3>
                             <Badge variant="outline" className="text-xs">
                               {product.category}
                             </Badge>
                           </div>
-                          <Package className="h-5 w-5 text-muted-foreground" />
+                          <Package className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-1" />
                         </div>
 
-                        <div className="space-y-2 mb-3">
+                        <div className="space-y-1 mb-2 text-xs">
                           {product.purity && (
-                            <div className="flex justify-between text-sm">
+                            <div className="flex justify-between">
                               <span className="text-muted-foreground">Purity:</span>
                               <span className="font-medium">{product.purity}</span>
                             </div>
                           )}
-                          {product.weight && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Weight:</span>
-                              <span className="font-medium">{product.weight}g</span>
-                            </div>
-                          )}
-                          <div className="flex justify-between text-sm">
+                          <div className="flex justify-between">
                             <span className="text-muted-foreground">Stock:</span>
                             <span className={`font-medium ${(product.available_quantity ?? product.quantity) < 5 ? "text-red-600" : "text-green-600"}`}>
                               {product.available_quantity ?? product.quantity} units
                             </span>
                           </div>
-                          <div className="flex justify-between">
+                          <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Price:</span>
-                            <span className="font-bold text-primary text-lg">{formatCurrency(product.rate)}</span>
+                            <span className="font-bold text-primary text-sm">{formatCurrency(product.rate)}</span>
                           </div>
                         </div>
 
                         <Button
                           onClick={() => addToCart(product)}
-                          className="w-full"
+                          className="w-full h-8 text-xs"
                           disabled={(product.available_quantity ?? product.quantity) === 0}
                           size="sm"
                         >
-                          <Plus className="h-4 w-4 mr-2" />
+                          <Plus className="h-3 w-3 mr-1" />
                           Add to Cart
                         </Button>
                       </CardContent>
