@@ -13,6 +13,7 @@ function Tabs({
     <TabsPrimitive.Root
       data-slot="tabs"
       className={cn('flex flex-col gap-2', className)}
+      suppressHydrationWarning
       {...props}
     />
   )
@@ -29,6 +30,7 @@ function TabsList({
         'bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]',
         className,
       )}
+      suppressHydrationWarning
       {...props}
     />
   )
@@ -59,6 +61,7 @@ function TabsContent({
     <TabsPrimitive.Content
       data-slot="tabs-content"
       className={cn('flex-1 outline-none', className)}
+      suppressHydrationWarning
       {...props}
     />
   )

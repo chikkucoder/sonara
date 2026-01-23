@@ -1,10 +1,11 @@
 {
-  "/about/page": "app/about/page.js",
   "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/api/girvi/route": "app/api/girvi/route.js",
+  "/api/inventory/girvi/route": "app/api/inventory/girvi/route.js",
   "/api/purchase/route": "app/api/purchase/route.js",
+  "/api/sales/route": "app/api/sales/route.js",
   "/api/settings/route": "app/api/settings/route.js",
-  "/contact/page": "app/contact/page.js",
-  "/dashboard/purchase/page": "app/dashboard/purchase/page.js",
-  "/login/page": "app/login/page.js",
-  "/page": "app/page.js"
+  "/dashboard/girvi/page": "app/dashboard/girvi/page.js",
+  "/dashboard/reports/page": "app/dashboard/reports/page.js",
+  "/dashboard/sales-history/page": "app/dashboard/sales-history/page.js"
 }

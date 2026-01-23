@@ -76,7 +76,7 @@ export default function SalesPage() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [discount, setDiscount] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [warranty, setWarranty] = useState("1")
+  const [warranty, setWarranty] = useState("0")
   const [paidAmount, setPaidAmount] = useState("")
   const [duesAmount, setDuesAmount] = useState("")
   const [paymentStatus, setPaymentStatus] = useState<"PAID" | "PARTIAL" | "UNPAID">("PAID")
@@ -207,10 +207,39 @@ export default function SalesPage() {
       return
     }
 
+    if (!/^[6-9]\d{9}$/.test(b2cCustomer.phone)) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter valid 10-digit phone number starting with 6-9",
+        variant: "destructive",
+      })
+      return
+    }
+
     if (cart.length === 0) {
       toast({
         title: "Empty Cart",
         description: "Please add items to cart",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const actualPaidAmount = paymentStatus === "PAID" ? total : (parseFloat(paidAmount) || 0)
+    
+    if (paymentStatus === "PARTIAL" && actualPaidAmount >= total) {
+      toast({
+        title: "Validation Error",
+        description: "Paid amount cannot be greater than or equal to total for partial payment",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (actualPaidAmount < 0) {
+      toast({
+        title: "Validation Error",
+        description: "Paid amount cannot be negative",
         variant: "destructive",
       })
       return
@@ -236,8 +265,8 @@ export default function SalesPage() {
         })),
         gst_type: "INTRASTATE",
         payment_mode: b2cPaymentMethod.toUpperCase(),
-        amount_paid: paymentStatus === "PAID" ? total : (parseFloat(paidAmount) || 0),
-        warranty_years: parseInt(warranty) || 1,
+        amount_paid: actualPaidAmount,
+        warranty_years: parseInt(warranty) || 0,
       }
 
       const response = await fetch("/api/sales", {
@@ -274,7 +303,7 @@ export default function SalesPage() {
       setCart([])
       setB2CCustomer({ name: "", phone: "", address: "" })
       setDiscount(0)
-      setWarranty("1")
+      setWarranty("0")
       setPaidAmount("")
       setDuesAmount("")
       setPaymentStatus("PAID")
@@ -333,7 +362,7 @@ export default function SalesPage() {
         gst_type: "INTRASTATE",
         payment_mode: "CREDIT",
         amount_paid: 0,
-        warranty_years: parseInt(warranty) || 1,
+        warranty_years: parseInt(warranty) || 0,
       }
 
       const response = await fetch("/api/sales", {
@@ -536,7 +565,17 @@ export default function SalesPage() {
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
-                              <span className="text-sm font-medium w-8 text-center">{item.cartQuantity}</span>
+                              <Input
+                                type="number"
+                                min="1"
+                                max={item.available_quantity ?? item.quantity}
+                                value={item.cartQuantity}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 1
+                                  updateCartQuantity(item._id, val)
+                                }}
+                                className="h-7 w-12 text-center text-sm p-0"
+                              />
                               <Button
                                 variant="outline"
                                 size="icon"
@@ -651,7 +690,24 @@ export default function SalesPage() {
                     </div>
                     <div>
                       <Label className="text-sm">Payment Status</Label>
-                      <Select value={paymentStatus} onValueChange={(v: any) => setPaymentStatus(v)}>
+                      <Select value={paymentStatus} onValueChange={(v: any) => {
+                        setPaymentStatus(v)
+                        if (v === "PAID") {
+                          setPaidAmount(total.toFixed(2))
+                          setDuesAmount("0")
+                        } else if (v === "UNPAID") {
+                          setPaidAmount("0")
+                          setDuesAmount(total.toFixed(2))
+                        } else if (v === "PARTIAL") {
+                          // Keep current paid amount or set to half
+                          const currentPaid = parseFloat(paidAmount) || 0
+                          if (currentPaid >= total || currentPaid === 0) {
+                            const halfAmount = (total / 2).toFixed(2)
+                            setPaidAmount(halfAmount)
+                            setDuesAmount(halfAmount)
+                          }
+                        }
+                      }}>
                         <SelectTrigger className="mt-1">
                           <SelectValue />
                         </SelectTrigger>
@@ -662,36 +718,61 @@ export default function SalesPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    {(paymentStatus === "PARTIAL" || paymentStatus === "UNPAID") && (
-                      <div className="space-y-2">
-                        <div>
-                          <Label className="text-sm">Dues Amount (₹)</Label>
-                          <Input
-                            type="number"
-                            value={duesAmount}
-                            onChange={(e) => {
-                              setDuesAmount(e.target.value)
-                              const dues = parseFloat(e.target.value) || 0
-                              const paid = Math.max(0, total - dues)
-                              setPaidAmount(paid.toString())
-                            }}
-                            placeholder="Enter dues amount"
-                            className="mt-1"
-                          />
+                    <div className="space-y-3">
+                      <div>
+                        <Label className="text-sm">Paid Amount (₹) *</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max={total}
+                          step="0.01"
+                          value={paidAmount}
+                          onChange={(e) => {
+                            let paid = parseFloat(e.target.value) || 0
+                            
+                            // Validate: paid amount cannot exceed total
+                            if (paid > total) {
+                              paid = total
+                              toast({
+                                title: "Invalid Amount",
+                                description: `Paid amount cannot exceed total bill amount of ${formatCurrency(total)}`,
+                                variant: "destructive",
+                              })
+                            }
+                            
+                            setPaidAmount(paid.toString())
+                            const dues = Math.max(0, total - paid)
+                            setDuesAmount(dues.toFixed(2))
+                            
+                            // Auto-update payment status based on paid amount
+                            if (paid >= total) {
+                              setPaymentStatus("PAID")
+                            } else if (paid > 0) {
+                              setPaymentStatus("PARTIAL")
+                            } else {
+                              setPaymentStatus("UNPAID")
+                            }
+                          }}
+                          placeholder="Enter amount paid"
+                          className="mt-1"
+                        />
+                      </div>
+                      <div className="p-4 bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 rounded-lg space-y-2">
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm font-medium text-gray-700">Total Bill:</p>
+                          <p className="text-lg font-bold text-gray-900">{formatCurrency(total)}</p>
                         </div>
-                        <div className="p-3 bg-orange-50 border border-orange-200 rounded-md">
-                          <p className="text-sm font-semibold text-orange-700">
-                            Total Bill: {formatCurrency(total)}
-                          </p>
-                          <p className="text-sm font-bold text-red-600 mt-1">
-                            Dues Amount: {formatCurrency(parseFloat(duesAmount) || 0)}
-                          </p>
-                          <p className="text-sm text-green-600">
-                            Paid: {formatCurrency(total - (parseFloat(duesAmount) || 0))}
-                          </p>
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm font-medium text-green-700">Paid Amount:</p>
+                          <p className="text-lg font-bold text-green-600">{formatCurrency(parseFloat(paidAmount) || 0)}</p>
+                        </div>
+                        <div className="h-px bg-blue-300 my-2"></div>
+                        <div className="flex justify-between items-center">
+                          <p className="text-sm font-semibold text-red-700">Due Amount:</p>
+                          <p className="text-xl font-bold text-red-600">{formatCurrency(parseFloat(duesAmount) || 0)}</p>
                         </div>
                       </div>
-                    )}
+                    </div>
                     <div>
                       <Label className="text-sm">Warranty (Years)</Label>
                       <Input
@@ -841,7 +922,17 @@ export default function SalesPage() {
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
-                              <span className="text-sm font-medium w-8 text-center">{item.cartQuantity}</span>
+                              <Input
+                                type="number"
+                                min="1"
+                                max={item.available_quantity ?? item.quantity}
+                                value={item.cartQuantity}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 1
+                                  updateCartQuantity(item._id, val)
+                                }}
+                                className="h-7 w-12 text-center text-sm p-0"
+                              />
                               <Button
                                 variant="outline"
                                 size="icon"

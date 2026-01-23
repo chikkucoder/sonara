@@ -65,6 +65,24 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
   type __Unused = __Check
 }
 
+// Validate ../../../app/dashboard/girvi-report/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/dashboard/girvi-report">> = Specific
+  const handler = {} as typeof import("../../../app/dashboard/girvi-report/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/dashboard/girvi/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/dashboard/girvi">> = Specific
+  const handler = {} as typeof import("../../../app/dashboard/girvi/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
 // Validate ../../../app/dashboard/inventory-report/page.tsx
 {
   type __IsExpected<Specific extends AppPageConfig<"/dashboard/inventory-report">> = Specific
@@ -105,24 +123,6 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends AppPageConfig<"/dashboard/private-sale">> = Specific
   const handler = {} as typeof import("../../../app/dashboard/private-sale/page.js")
-  type __Check = __IsExpected<typeof handler>
-  // @ts-ignore
-  type __Unused = __Check
-}
-
-// Validate ../../../app/dashboard/private-zone/page.tsx
-{
-  type __IsExpected<Specific extends AppPageConfig<"/dashboard/private-zone">> = Specific
-  const handler = {} as typeof import("../../../app/dashboard/private-zone/page.js")
-  type __Check = __IsExpected<typeof handler>
-  // @ts-ignore
-  type __Unused = __Check
-}
-
-// Validate ../../../app/dashboard/private-zone/report/page.tsx
-{
-  type __IsExpected<Specific extends AppPageConfig<"/dashboard/private-zone/report">> = Specific
-  const handler = {} as typeof import("../../../app/dashboard/private-zone/report/page.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check
@@ -186,6 +186,24 @@ type RouteHandlerConfig<Route extends AppRouteHandlerRoutes = AppRouteHandlerRou
 {
   type __IsExpected<Specific extends AppPageConfig<"/">> = Specific
   const handler = {} as typeof import("../../../app/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/settings/private-zone/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/settings/private-zone">> = Specific
+  const handler = {} as typeof import("../../../app/settings/private-zone/page.js")
+  type __Check = __IsExpected<typeof handler>
+  // @ts-ignore
+  type __Unused = __Check
+}
+
+// Validate ../../../app/settings/private-zone/report/page.tsx
+{
+  type __IsExpected<Specific extends AppPageConfig<"/settings/private-zone/report">> = Specific
+  const handler = {} as typeof import("../../../app/settings/private-zone/report/page.js")
   type __Check = __IsExpected<typeof handler>
   // @ts-ignore
   type __Unused = __Check

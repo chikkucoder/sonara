@@ -495,6 +495,18 @@ const SaleSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mongoos
         type: Boolean,
         default: false
     },
+    warranty_years: {
+        type: Number,
+        default: 1,
+        min: [
+            0,
+            "Warranty cannot be negative"
+        ],
+        max: [
+            10,
+            "Warranty cannot exceed 10 years"
+        ]
+    },
     notes: {
         type: String,
         trim: true,
@@ -603,7 +615,7 @@ __turbopack_context__.s([
     ()=>__TURBOPACK__default__export__
 ]);
 var __TURBOPACK__imported__module__$5b$externals$5d2f$mongoose__$5b$external$5d$__$28$mongoose$2c$__cjs$29$__ = __turbopack_context__.i("[externals]/mongoose [external] (mongoose, cjs)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$bcryptjs$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/bcryptjs/index.js [app-route] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$bcryptjs$40$2$2e$4$2e$3$2f$node_modules$2f$bcryptjs$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/bcryptjs@2.4.3/node_modules/bcryptjs/index.js [app-route] (ecmascript)");
 ;
 ;
 const UserSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mongoose__$5b$external$5d$__$28$mongoose$2c$__cjs$29$__["default"].Schema({
@@ -650,40 +662,6 @@ const UserSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mongoos
     gst_no: {
         type: String
     },
-    membership_type: {
-        type: String,
-        enum: [
-            "free",
-            "basic",
-            "premium",
-            "enterprise"
-        ],
-        default: "free"
-    },
-    membership_status: {
-        type: String,
-        enum: [
-            "active",
-            "expired",
-            "suspended"
-        ],
-        default: "active"
-    },
-    membership_start_date: {
-        type: Date,
-        default: Date.now
-    },
-    membership_end_date: {
-        type: Date
-    },
-    max_users: {
-        type: Number,
-        default: 1
-    },
-    max_inventory: {
-        type: Number,
-        default: 100
-    },
     features_enabled: {
         type: [
             String
@@ -707,8 +685,8 @@ const UserSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mongoos
 UserSchema.pre("save", async function(next) {
     if (!this.isModified("password")) return next();
     try {
-        const salt = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$bcryptjs$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].genSalt(10);
-        this.password = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$bcryptjs$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].hash(this.password, salt);
+        const salt = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$bcryptjs$40$2$2e$4$2e$3$2f$node_modules$2f$bcryptjs$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].genSalt(10);
+        this.password = await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$bcryptjs$40$2$2e$4$2e$3$2f$node_modules$2f$bcryptjs$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].hash(this.password, salt);
         next();
     } catch (error) {
         next(error);
@@ -717,7 +695,7 @@ UserSchema.pre("save", async function(next) {
 // Compare password method
 UserSchema.methods.comparePassword = async function(candidatePassword) {
     try {
-        return await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$bcryptjs$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].compare(candidatePassword, this.password);
+        return await __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$bcryptjs$40$2$2e$4$2e$3$2f$node_modules$2f$bcryptjs$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].compare(candidatePassword, this.password);
     } catch (error) {
         return false;
     }
@@ -735,8 +713,8 @@ __turbopack_context__.s([
     "authOptions",
     ()=>authOptions
 ]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2d$auth$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next-auth/index.js [app-route] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2d$auth$2f$providers$2f$credentials$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next-auth/providers/credentials.js [app-route] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$2d$auth$40$4$2e$24$2e$13_next$40$16$2e$0_c820c0e7ff6e3da9d12c9a3f6111e4c4$2f$node_modules$2f$next$2d$auth$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/next-auth@4.24.13_next@16.0_c820c0e7ff6e3da9d12c9a3f6111e4c4/node_modules/next-auth/index.js [app-route] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$2d$auth$40$4$2e$24$2e$13_next$40$16$2e$0_c820c0e7ff6e3da9d12c9a3f6111e4c4$2f$node_modules$2f$next$2d$auth$2f$providers$2f$credentials$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/next-auth@4.24.13_next@16.0_c820c0e7ff6e3da9d12c9a3f6111e4c4/node_modules/next-auth/providers/credentials.js [app-route] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$mongodb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/mongodb.ts [app-route] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$models$2f$User$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/models/User.ts [app-route] (ecmascript)");
 ;
@@ -745,7 +723,7 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$models$2f$User$2e$ts_
 ;
 const authOptions = {
     providers: [
-        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2d$auth$2f$providers$2f$credentials$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"])({
+        (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$2d$auth$40$4$2e$24$2e$13_next$40$16$2e$0_c820c0e7ff6e3da9d12c9a3f6111e4c4$2f$node_modules$2f$next$2d$auth$2f$providers$2f$credentials$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"])({
             name: "Credentials",
             credentials: {
                 email: {
@@ -811,7 +789,7 @@ const authOptions = {
     },
     secret: process.env.NEXTAUTH_SECRET || "your-secret-key-change-in-production"
 };
-const handler = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2d$auth$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"])(authOptions);
+const handler = (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$2d$auth$40$4$2e$24$2e$13_next$40$16$2e$0_c820c0e7ff6e3da9d12c9a3f6111e4c4$2f$node_modules$2f$next$2d$auth$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"])(authOptions);
 ;
 }),
 "[project]/app/api/sales/bill/route.ts [app-route] (ecmascript)", ((__turbopack_context__) => {
@@ -821,8 +799,8 @@ __turbopack_context__.s([
     "GET",
     ()=>GET
 ]);
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2d$auth$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next-auth/index.js [app-route] (ecmascript)");
-var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/next/server.js [app-route] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$2d$auth$40$4$2e$24$2e$13_next$40$16$2e$0_c820c0e7ff6e3da9d12c9a3f6111e4c4$2f$node_modules$2f$next$2d$auth$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/next-auth@4.24.13_next@16.0_c820c0e7ff6e3da9d12c9a3f6111e4c4/node_modules/next-auth/index.js [app-route] (ecmascript)");
+var __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$3_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/node_modules/.pnpm/next@16.0.3_react-dom@19.2.0_react@19.2.0__react@19.2.0/node_modules/next/server.js [app-route] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$mongodb$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/mongodb.ts [app-route] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$models$2f$Sale$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/models/Sale.ts [app-route] (ecmascript)");
 var __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$models$2f$User$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__ = __turbopack_context__.i("[project]/lib/models/User.ts [app-route] (ecmascript)");
@@ -835,9 +813,9 @@ var __TURBOPACK__imported__module__$5b$project$5d2f$app$2f$api$2f$auth$2f5b2e2e2
 ;
 async function GET(request) {
     try {
-        const session = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2d$auth$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["getServerSession"])(__TURBOPACK__imported__module__$5b$project$5d2f$app$2f$api$2f$auth$2f5b2e2e2e$nextauth$5d2f$route$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["authOptions"]);
+        const session = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$2d$auth$40$4$2e$24$2e$13_next$40$16$2e$0_c820c0e7ff6e3da9d12c9a3f6111e4c4$2f$node_modules$2f$next$2d$auth$2f$index$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["getServerSession"])(__TURBOPACK__imported__module__$5b$project$5d2f$app$2f$api$2f$auth$2f5b2e2e2e$nextauth$5d2f$route$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["authOptions"]);
         if (!session || !session.user) {
-            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$3_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
                 error: "Unauthorized"
             }, {
                 status: 401
@@ -847,7 +825,7 @@ async function GET(request) {
         const { searchParams } = new URL(request.url);
         const saleId = searchParams.get("id");
         if (!saleId) {
-            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$3_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
                 error: "Sale ID required"
             }, {
                 status: 400
@@ -860,12 +838,15 @@ async function GET(request) {
         }).lean();
         const user = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$models$2f$User$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].findById(userId).select('shop_name shop_address phone email gst_no').lean();
         if (!sale) {
-            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+            return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$3_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
                 error: "Sale not found"
             }, {
                 status: 404
             });
         }
+        // Fetch customer details for address
+        const Customer = (await __turbopack_context__.A("[project]/lib/models/Customer.ts [app-route] (ecmascript, async loader)")).default;
+        const customer = await Customer.findById(sale.customer_id).select('address city state pincode business_name contact_person').lean();
         // Map sale data to bill format
         const billData = {
             invoice_no: sale.invoice_number,
@@ -873,26 +854,33 @@ async function GET(request) {
             sale_type: sale.customer_type?.toLowerCase() || 'b2c',
             customer_name: sale.customer_name,
             customer_phone: sale.customer_phone,
-            customer_address: '',
-            business_name: sale.customer_name,
-            contact_person: '',
+            customer_address: customer?.address || '',
+            business_name: customer?.business_name || sale.customer_name,
+            contact_person: customer?.contact_person || '',
             gst_no: sale.customer_gst || '',
             business_phone: sale.customer_phone,
-            business_address: '',
+            business_address: customer?.address || '',
             payment_terms: sale.payment_terms,
             due_date: sale.due_date,
             items: sale.items.map((item)=>({
                     item_name: item.item_name,
+                    purity: item.purity,
+                    gross_weight: item.gross_weight,
+                    weight: item.weight,
                     quantity: item.quantity,
                     rate: item.base_price / item.quantity || 0,
+                    making_charges: item.making_charges,
                     amount: item.item_total
                 })),
             subtotal: sale.total_base_price,
             discount: sale.total_discount_amount,
             gst: sale.total_gst,
             total: sale.grand_total,
+            amount_paid: sale.amount_paid || 0,
+            amount_pending: sale.amount_pending || 0,
             payment_method: sale.payment_mode,
-            payment_status: sale.payment_status?.toLowerCase() || 'unpaid'
+            payment_status: sale.payment_status || 'UNPAID',
+            warranty_years: sale.warranty_years || 0
         };
         // Generate bill HTML
         const billHTML = `
@@ -1060,9 +1048,13 @@ async function GET(request) {
     <thead>
       <tr>
         <th>S.No</th>
-        <th>Item Description</th>
-        <th class="text-right">Quantity</th>
+        <th>Item</th>
+        <th class="text-right">Purity</th>
+        <th class="text-right">Gross Wt (g)</th>
+        <th class="text-right">Net Wt (g)</th>
         <th class="text-right">Rate</th>
+        <th class="text-right">Making</th>
+        <th class="text-right">Qty</th>
         <th class="text-right">Amount</th>
       </tr>
     </thead>
@@ -1071,8 +1063,12 @@ async function GET(request) {
         <tr>
           <td>${index + 1}</td>
           <td>${item.item_name}</td>
-          <td class="text-right">${item.quantity}</td>
+          <td class="text-right">${item.purity || '-'}</td>
+          <td class="text-right">${item.gross_weight ? item.gross_weight.toFixed(2) : '-'}</td>
+          <td class="text-right">${item.weight ? item.weight.toFixed(2) : '-'}</td>
           <td class="text-right">₹${(item.rate || 0).toLocaleString('en-IN')}</td>
+          <td class="text-right">₹${(item.making_charges || 0).toLocaleString('en-IN')}</td>
+          <td class="text-right">${item.quantity}</td>
           <td class="text-right">₹${(item.amount || 0).toLocaleString('en-IN')}</td>
         </tr>
       `).join('')}
@@ -1098,14 +1094,32 @@ async function GET(request) {
       <span>TOTAL:</span>
       <span>₹${(billData.total || 0).toLocaleString('en-IN')}</span>
     </div>
+    ${billData.amount_paid > 0 ? `
+      <div class="total-row" style="color: green;">
+        <span>Amount Paid:</span>
+        <span>₹${(billData.amount_paid || 0).toLocaleString('en-IN')}</span>
+      </div>
+    ` : ''}
+    ${billData.amount_pending > 0 ? `
+      <div class="total-row" style="color: orange;">
+        <span>Amount Pending:</span>
+        <span>₹${(billData.amount_pending || 0).toLocaleString('en-IN')}</span>
+      </div>
+    ` : ''}
     <div class="total-row">
       <span>Payment Method:</span>
       <span>${billData.payment_method ? billData.payment_method.toUpperCase() : billData.payment_terms === 'immediate' ? 'IMMEDIATE' : 'CREDIT'}</span>
     </div>
     <div class="total-row">
       <span>Payment Status:</span>
-      <span style="color: ${billData.payment_status === 'paid' ? 'green' : 'orange'};">${billData.payment_status.toUpperCase()}</span>
+      <span style="color: ${billData.payment_status === 'PAID' ? 'green' : billData.payment_status === 'PARTIAL' ? 'orange' : 'red'};">${billData.payment_status ? billData.payment_status.toUpperCase() : 'UNPAID'}</span>
     </div>
+    ${billData.warranty_years > 0 ? `
+      <div class="total-row" style="border-top: 1px dashed #ddd; margin-top: 10px; padding-top: 10px;">
+        <span>Warranty:</span>
+        <span>${billData.warranty_years} ${billData.warranty_years === 1 ? 'Year' : 'Years'}</span>
+      </div>
+    ` : ''}
   </div>
 
   <div class="footer">
@@ -1122,14 +1136,14 @@ async function GET(request) {
 </body>
 </html>
     `;
-        return new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"](billHTML, {
+        return new __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$3_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"](billHTML, {
             headers: {
                 "Content-Type": "text/html; charset=utf-8"
             }
         });
     } catch (error) {
         console.error("Error generating bill:", error);
-        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
+        return __TURBOPACK__imported__module__$5b$project$5d2f$node_modules$2f2e$pnpm$2f$next$40$16$2e$0$2e$3_react$2d$dom$40$19$2e$2$2e$0_react$40$19$2e$2$2e$0_$5f$react$40$19$2e$2$2e$0$2f$node_modules$2f$next$2f$server$2e$js__$5b$app$2d$route$5d$__$28$ecmascript$29$__["NextResponse"].json({
             error: error instanceof Error ? error.message : "Failed to generate bill"
         }, {
             status: 500

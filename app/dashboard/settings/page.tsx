@@ -16,6 +16,7 @@ import { User, Store, Bell, Shield, Key, Save, Camera, Check } from "lucide-reac
 
 export default function SettingsPage() {
   const router = useRouter()
+  const [mounted, setMounted] = useState(false)
   const [clickCount, setClickCount] = useState(0)
   const clickTimerRef = useRef<NodeJS.Timeout | null>(null)
 
@@ -49,6 +50,7 @@ export default function SettingsPage() {
   })
 
   useEffect(() => {
+    setMounted(true)
     fetchSettings()
   }, [])
 
@@ -79,7 +81,7 @@ export default function SettingsPage() {
 
     if (newCount >= 5) {
       setClickCount(0)
-      router.push("/dashboard/private-zone")
+      router.push("/settings/private-zone")
     } else {
       clickTimerRef.current = setTimeout(() => {
         setClickCount(0)
@@ -166,6 +168,10 @@ export default function SettingsPage() {
     }
   }
 
+  if (!mounted) {
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* MainLayout will handle Sidebar */}
@@ -175,7 +181,7 @@ export default function SettingsPage() {
             <DashboardHeader title="Settings" subtitle="Manage your account and store preferences" />
           </div>
 
-          <Tabs defaultValue="profile" className="space-y-6">
+          <Tabs defaultValue="profile" className="space-y-6"  suppressHydrationWarning>
             <TabsList className="grid w-full max-w-2xl grid-cols-4">
               <TabsTrigger value="profile" className="flex items-center gap-2">
                 <User className="h-4 w-4" />

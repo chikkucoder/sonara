@@ -75,8 +75,6 @@ export default function PurchasePage() {
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null)
   const [isSupplierDetailOpen, setIsSupplierDetailOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("purchases")
-  const [keepSupplierInfo, setKeepSupplierInfo] = useState(false)
-  const [savedSupplierInfo, setSavedSupplierInfo] = useState<any>(null)
   
   const [formData, setFormData] = useState({
     supplier_name: "",
@@ -109,11 +107,20 @@ export default function PurchasePage() {
   const handleInputChange = (field: string, value: string) => {
     const newData = { ...formData, [field]: value }
     
-    // Auto-calculate total value
-    if (field === "quantity" || field === "rate") {
+    // Auto-calculate total value based on item type
+    if (field === "quantity" || field === "rate" || field === "gross_weight" || field === "item_type") {
       const qty = parseFloat(newData.quantity) || 0
       const rate = parseFloat(newData.rate) || 0
-      newData.total_value = (qty * rate).toString()
+      const grossWeight = parseFloat(newData.gross_weight) || 0
+      
+      // For RAW items: total = gross_weight * rate_per_gram
+      if (newData.item_type === "RAW") {
+        newData.total_value = (grossWeight * rate).toString()
+      } 
+      // For JEWELLERY items: total = quantity * rate_per_piece
+      else if (newData.item_type === "JEWELLERY") {
+        newData.total_value = (qty * rate).toString()
+      }
     }
     
     setFormData(newData)
@@ -129,6 +136,14 @@ export default function PurchasePage() {
       })
       return
     }
+    if (!formData.item_type) {
+      toast({
+        title: "Validation Error",
+        description: "Please select item type (Raw/Jewellery)",
+        variant: "destructive",
+      })
+      return
+    }
     if (!formData.item_name.trim()) {
       toast({
         title: "Validation Error",
@@ -137,22 +152,55 @@ export default function PurchasePage() {
       })
       return
     }
-    if (!formData.category) {
-      toast({
-        title: "Validation Error",
-        description: "Please select category",
-        variant: "destructive",
-      })
-      return
+    
+    // Validation for RAW items
+    if (formData.item_type === "RAW") {
+      if (!formData.metal_type) {
+        toast({
+          title: "Validation Error",
+          description: "Please select metal type for raw material",
+          variant: "destructive",
+        })
+        return
+      }
+      if (!formData.purity) {
+        toast({
+          title: "Validation Error",
+          description: "Please select purity for raw material",
+          variant: "destructive",
+        })
+        return
+      }
+      if (!formData.gross_weight || parseFloat(formData.gross_weight) <= 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please enter valid gross weight for raw material",
+          variant: "destructive",
+        })
+        return
+      }
     }
-    if (!formData.quantity || parseFloat(formData.quantity) <= 0) {
-      toast({
-        title: "Validation Error",
-        description: "Please enter valid quantity",
-        variant: "destructive",
-      })
-      return
+    
+    // Validation for JEWELLERY items
+    if (formData.item_type === "JEWELLERY") {
+      if (!formData.category) {
+        toast({
+          title: "Validation Error",
+          description: "Please select category for jewellery",
+          variant: "destructive",
+        })
+        return
+      }
+      if (!formData.quantity || parseFloat(formData.quantity) <= 0) {
+        toast({
+          title: "Validation Error",
+          description: "Please enter valid quantity",
+          variant: "destructive",
+        })
+        return
+      }
     }
+    
     if (!formData.rate || parseFloat(formData.rate) <= 0) {
       toast({
         title: "Validation Error",
@@ -178,12 +226,14 @@ export default function PurchasePage() {
         supplier_phone: formData.supplier_phone,
         supplier_address: formData.supplier_address,
         supplier_gst: formData.supplier_gst,
+        supplier_type: formData.supplier_type,
         item_name: formData.item_name,
+        item_type: formData.item_type,
         category: formData.category,
-        weight: parseFloat(formData.weight) || 0,
+        weight: parseFloat(formData.gross_weight) || 0,
         purity: formData.purity,
-        metal_type: formData.purity ? "GOLD" : undefined,
-        quantity: parseFloat(formData.quantity),
+        metal_type: formData.metal_type ? formData.metal_type.toUpperCase() : undefined,
+        quantity: parseFloat(formData.quantity) || 1,
         rate_per_unit: parseFloat(formData.rate),
         subtotal: subtotal,
         gst_rate: 3,
@@ -221,40 +271,39 @@ export default function PurchasePage() {
         description: data.message || "Purchase added and inventory updated successfully!",
       })
       
-      // Save supplier info if user wants to add more items
-      if (keepSupplierInfo) {
-        setSavedSupplierInfo({
-          supplier_name: formData.supplier_name,
-          supplier_phone: formData.supplier_phone,
-          supplier_address: formData.supplier_address,
-          supplier_gst: formData.supplier_gst,
-          supplier_type: formData.supplier_type,
-          invoice_no: formData.invoice_no,
-          purchase_date: formData.purchase_date,
-          payment_mode: formData.payment_mode,
-          payment_status: formData.payment_status,
-        })
-        resetForm()
-        // Restore supplier info after reset
-        setTimeout(() => {
-          setFormData(prev => ({
-            ...prev,
-            supplier_name: formData.supplier_name,
-            supplier_phone: formData.supplier_phone,
-            supplier_address: formData.supplier_address,
-            supplier_gst: formData.supplier_gst,
-            supplier_type: formData.supplier_type,
-            invoice_no: formData.invoice_no,
-            purchase_date: formData.purchase_date,
-            payment_mode: formData.payment_mode,
-            payment_status: formData.payment_status,
-          }))
-        }, 0)
-      } else {
-        setIsAddDialogOpen(false)
-        resetForm()
-        setSavedSupplierInfo(null)
+      // Auto-save supplier info for adding more items
+      const currentSupplierInfo = {
+        supplier_name: formData.supplier_name,
+        supplier_phone: formData.supplier_phone,
+        supplier_address: formData.supplier_address,
+        supplier_gst: formData.supplier_gst,
+        supplier_type: formData.supplier_type,
+        invoice_no: formData.invoice_no,
+        purchase_date: formData.purchase_date,
+        payment_mode: formData.payment_mode,
+        payment_status: formData.payment_status,
+        location: formData.location,
       }
+      
+      // Reset only item-related fields, keep supplier info
+      setFormData({
+        ...currentSupplierInfo,
+        item_name: "",
+        category: "",
+        item_type: "",
+        metal_type: "",
+        weight: "",
+        gross_weight: "",
+        net_weight: "",
+        purity: "",
+        quantity: "1",
+        rate: "",
+        total_value: "0",
+        due_amount: "",
+        due_date: "",
+        attachment: null,
+        notes: "",
+      })
       
       // Refresh purchases list
       fetchPurchases()
@@ -406,7 +455,6 @@ export default function PurchasePage() {
       location: "",
       notes: "",
     })
-    setKeepSupplierInfo(false)
   }
 
   useEffect(() => {
@@ -585,6 +633,23 @@ export default function PurchasePage() {
                       Product Information
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Item Type - First Field */}
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="item_type" className="flex items-center gap-1">
+                          Item Type <span className="text-red-500">*</span>
+                        </Label>
+                        <Select value={formData.item_type} onValueChange={(v) => handleInputChange("item_type", v)}>
+                          <SelectTrigger id="item_type" className="border-2">
+                            <SelectValue placeholder="Select item type (Raw/Jewellery)" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="RAW">Raw Material</SelectItem>
+                            <SelectItem value="JEWELLERY">Jewellery</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Common Fields */}
                       <div className="space-y-2">
                         <Label htmlFor="item_name" className="flex items-center gap-1">
                           Item Name <span className="text-red-500">*</span>
@@ -597,127 +662,204 @@ export default function PurchasePage() {
                           className="border-2"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="category" className="flex items-center gap-1">
-                          Category <span className="text-red-500">*</span>
-                        </Label>
-                        <Select value={formData.category} onValueChange={(v) => handleInputChange("category", v)}>
-                          <SelectTrigger id="category" className="border-2">
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((cat) => (
-                              <SelectItem key={cat} value={cat}>
-                                {cat}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="item_type">Item Type</Label>
-                        <Select value={formData.item_type} onValueChange={(v) => handleInputChange("item_type", v)}>
-                          <SelectTrigger id="item_type" className="border-2">
-                            <SelectValue placeholder="Select item type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="RAW">RAW</SelectItem>
-                            <SelectItem value="JEWELLERY">JEWELLERY</SelectItem>
-                            <SelectItem value="JOBWORK">JOBWORK</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="metal_type">Metal Type</Label>
-                        <Select value={formData.metal_type} onValueChange={(v) => handleInputChange("metal_type", v)}>
-                          <SelectTrigger id="metal_type" className="border-2">
-                            <SelectValue placeholder="Select metal type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Gold">Gold</SelectItem>
-                            <SelectItem value="Silver">Silver</SelectItem>
-                            <SelectItem value="Diamond">Diamond</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="purity">Purity</Label>
-                        <Select value={formData.purity} onValueChange={(v) => handleInputChange("purity", v)}>
-                          <SelectTrigger id="purity" className="border-2">
-                            <SelectValue placeholder="Select purity" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {purityOptions.map((pur) => (
-                              <SelectItem key={pur} value={pur}>
-                                {pur}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="gross_weight">Gross Weight (grams)</Label>
-                        <Input
-                          id="gross_weight"
-                          type="number"
-                          step="0.001"
-                          value={formData.gross_weight}
-                          onChange={(e) => handleInputChange("gross_weight", e.target.value)}
-                          placeholder="Enter gross weight"
-                          className="border-2"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="net_weight">Net Weight (grams)</Label>
-                        <Input
-                          id="net_weight"
-                          type="number"
-                          step="0.001"
-                          value={formData.net_weight}
-                          onChange={(e) => handleInputChange("net_weight", e.target.value)}
-                          placeholder="Enter net weight"
-                          className="border-2"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="quantity" className="flex items-center gap-1">
-                          Quantity <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="quantity"
-                          type="number"
-                          min="1"
-                          value={formData.quantity}
-                          onChange={(e) => handleInputChange("quantity", e.target.value)}
-                          placeholder="Enter quantity"
-                          className="border-2"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="rate" className="flex items-center gap-1">
-                          Rate per gram (₹) <span className="text-red-500">*</span>
-                        </Label>
-                        <Input
-                          id="rate"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={formData.rate}
-                          onChange={(e) => handleInputChange("rate", e.target.value)}
-                          placeholder="Enter rate per gram"
-                          className="border-2"
-                        />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="total_value">Total Value (₹)</Label>
-                        <Input
-                          id="total_value"
-                          type="number"
-                          value={formData.total_value}
-                          readOnly
-                          className="bg-muted font-semibold text-lg"
-                        />
-                      </div>
+
+                      {/* Conditional Fields for RAW Material */}
+                      {formData.item_type === "RAW" && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="metal_type" className="flex items-center gap-1">
+                              Metal Type <span className="text-red-500">*</span>
+                            </Label>
+                            <Select value={formData.metal_type} onValueChange={(v) => handleInputChange("metal_type", v)}>
+                              <SelectTrigger id="metal_type" className="border-2">
+                                <SelectValue placeholder="Select metal type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="GOLD">Gold</SelectItem>
+                                <SelectItem value="SILVER">Silver</SelectItem>
+                                <SelectItem value="PLATINUM">Platinum</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="purity" className="flex items-center gap-1">
+                              Purity <span className="text-red-500">*</span>
+                            </Label>
+                            <Select value={formData.purity} onValueChange={(v) => handleInputChange("purity", v)}>
+                              <SelectTrigger id="purity" className="border-2">
+                                <SelectValue placeholder="Select purity" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {purityOptions.map((pur) => (
+                                  <SelectItem key={pur} value={pur}>
+                                    {pur}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="gross_weight" className="flex items-center gap-1">
+                              Gross Weight (grams) <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                              id="gross_weight"
+                              type="number"
+                              step="0.001"
+                              value={formData.gross_weight}
+                              onChange={(e) => handleInputChange("gross_weight", e.target.value)}
+                              placeholder="Enter gross weight"
+                              className="border-2"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="net_weight">Net Weight (grams)</Label>
+                            <Input
+                              id="net_weight"
+                              type="number"
+                              step="0.001"
+                              value={formData.net_weight}
+                              onChange={(e) => handleInputChange("net_weight", e.target.value)}
+                              placeholder="Enter net weight"
+                              className="border-2"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="rate" className="flex items-center gap-1">
+                              Rate per gram (₹) <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                              id="rate"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={formData.rate}
+                              onChange={(e) => handleInputChange("rate", e.target.value)}
+                              placeholder="Enter rate per gram"
+                              className="border-2"
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Conditional Fields for JEWELLERY */}
+                      {formData.item_type === "JEWELLERY" && (
+                        <>
+                          <div className="space-y-2">
+                            <Label htmlFor="category" className="flex items-center gap-1">
+                              Category <span className="text-red-500">*</span>
+                            </Label>
+                            <Select value={formData.category} onValueChange={(v) => handleInputChange("category", v)}>
+                              <SelectTrigger id="category" className="border-2">
+                                <SelectValue placeholder="Select category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {categories.map((cat) => (
+                                  <SelectItem key={cat} value={cat}>
+                                    {cat}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="metal_type">Metal Type</Label>
+                            <Select value={formData.metal_type} onValueChange={(v) => handleInputChange("metal_type", v)}>
+                              <SelectTrigger id="metal_type" className="border-2">
+                                <SelectValue placeholder="Select metal type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="GOLD">Gold</SelectItem>
+                                <SelectItem value="SILVER">Silver</SelectItem>
+                                <SelectItem value="DIAMOND">Diamond</SelectItem>
+                                <SelectItem value="PLATINUM">Platinum</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="purity">Purity</Label>
+                            <Select value={formData.purity} onValueChange={(v) => handleInputChange("purity", v)}>
+                              <SelectTrigger id="purity" className="border-2">
+                                <SelectValue placeholder="Select purity" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {purityOptions.map((pur) => (
+                                  <SelectItem key={pur} value={pur}>
+                                    {pur}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="gross_weight">Gross Weight (grams)</Label>
+                            <Input
+                              id="gross_weight"
+                              type="number"
+                              step="0.001"
+                              value={formData.gross_weight}
+                              onChange={(e) => handleInputChange("gross_weight", e.target.value)}
+                              placeholder="Enter gross weight"
+                              className="border-2"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="net_weight">Net Weight (grams)</Label>
+                            <Input
+                              id="net_weight"
+                              type="number"
+                              step="0.001"
+                              value={formData.net_weight}
+                              onChange={(e) => handleInputChange("net_weight", e.target.value)}
+                              placeholder="Enter net weight"
+                              className="border-2"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="quantity" className="flex items-center gap-1">
+                              Quantity (Pieces) <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                              id="quantity"
+                              type="number"
+                              min="1"
+                              value={formData.quantity}
+                              onChange={(e) => handleInputChange("quantity", e.target.value)}
+                              placeholder="Enter quantity"
+                              className="border-2"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="rate" className="flex items-center gap-1">
+                              Rate per piece (₹) <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                              id="rate"
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={formData.rate}
+                              onChange={(e) => handleInputChange("rate", e.target.value)}
+                              placeholder="Enter rate per piece"
+                              className="border-2"
+                            />
+                          </div>
+                        </>
+                      )}
+
+                      {/* Total Value - Always Visible */}
+                      {formData.item_type && (
+                        <div className="space-y-2 md:col-span-2">
+                          <Label htmlFor="total_value">Total Value (₹)</Label>
+                          <Input
+                            id="total_value"
+                            type="number"
+                            value={formData.total_value}
+                            readOnly
+                            className="bg-muted font-semibold text-lg"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -836,29 +978,19 @@ export default function PurchasePage() {
 
                 <DialogFooter className="mt-6">
                   <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="keepSupplierInfo"
-                        checked={keepSupplierInfo}
-                        onChange={(e) => setKeepSupplierInfo(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      <Label htmlFor="keepSupplierInfo" className="text-sm cursor-pointer">
-                        Add more items from same supplier
-                      </Label>
+                    <div className="text-sm text-muted-foreground">
+                      💡 Item will be added and form will reset for next item
                     </div>
                     <div className="flex gap-2">
                       <Button variant="outline" onClick={() => {
                         setIsAddDialogOpen(false)
-                        setKeepSupplierInfo(false)
-                        setSavedSupplierInfo(null)
+                        resetForm()
                       }}>
-                        Cancel
+                        Done & Close
                       </Button>
                       <Button onClick={handleAddPurchase}>
                         <Plus className="h-4 w-4 mr-2" />
-                        {keepSupplierInfo ? "Add Item & Continue" : "Add Purchase & Update Inventory"}
+                        Add Item
                       </Button>
                     </div>
                   </div>

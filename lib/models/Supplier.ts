@@ -31,6 +31,7 @@ export interface ISupplier extends mongoose.Document {
   bank_name?: string
   account_number?: string
   ifsc_code?: string
+  supplier_type?: "SUPPLIER" | "WHOLESALER" | "KARIGAR" // Supplier type
   
   // Business metadata
   total_purchases: number // Aggregated count
@@ -148,6 +149,14 @@ const SupplierSchema = new mongoose.Schema<ISupplier>(
         message: (props) => `${props.value} is not a valid IFSC code!`,
       },
     },
+    supplier_type: {
+      type: String,
+      enum: {
+        values: ["SUPPLIER", "WHOLESALER", "KARIGAR"],
+        message: "{VALUE} is not a valid supplier type",
+      },
+      uppercase: true,
+    },
     total_purchases: {
       type: Number,
       default: 0,
@@ -247,6 +256,7 @@ SupplierSchema.statics.findOrCreateByPhone = async function (
     supplier.bank_name = supplierData.bank_name || supplier.bank_name
     supplier.account_number = supplierData.account_number || supplier.account_number
     supplier.ifsc_code = supplierData.ifsc_code || supplier.ifsc_code
+    supplier.supplier_type = supplierData.supplier_type || supplier.supplier_type
     
     await supplier.save()
   } else {

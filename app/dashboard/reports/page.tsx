@@ -148,12 +148,106 @@ export default function ReportsPage() {
       description: `Girvi - ${g.customer_name}`,
       payment_method: "cash",
       status: g.status,
-      invoice_no: g.girvi_no || "N/A",
+      invoice_no: "N/A",
       customer_name: g.customer_name,
       amount_paid: g.amount,
       amount_pending: 0,
     })),
   ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+
+  // Calculate daily trends - group by date
+  const dailyTrends = () => {
+    const trendsMap = new Map<string, any>()
+    
+    // Group sales by date
+    sales.forEach((s) => {
+      const date = s.sale_date?.split("T")[0]
+      if (!date) return
+      
+      if (!trendsMap.has(date)) {
+        trendsMap.set(date, {
+          date,
+          totalPayments: 0,
+          totalRefunds: 0,
+          totalDues: 0,
+          cashPayments: 0,
+          cardPayments: 0,
+          upiPayments: 0,
+          bankTransfer: 0,
+          others: 0,
+          girviAmount: 0,
+          transactionCount: 0,
+        })
+      }
+      
+      const trend = trendsMap.get(date)!
+      trend.totalPayments += s.amount_paid || 0
+      trend.totalDues += s.amount_pending || 0
+      trend.transactionCount++
+      
+      const method = s.payment_method?.toLowerCase() || ""
+      if (method === "cash") trend.cashPayments += s.amount_paid || 0
+      else if (method === "card") trend.cardPayments += s.amount_paid || 0
+      else if (method === "upi") trend.upiPayments += s.amount_paid || 0
+      else if (method === "bank_transfer") trend.bankTransfer += s.amount_paid || 0
+      else trend.others += s.amount_paid || 0
+    })
+    
+    // Group purchases by date
+    purchases.forEach((p) => {
+      const date = p.purchase_date?.split("T")[0]
+      if (!date) return
+      
+      if (!trendsMap.has(date)) {
+        trendsMap.set(date, {
+          date,
+          totalPayments: 0,
+          totalRefunds: 0,
+          totalDues: 0,
+          cashPayments: 0,
+          cardPayments: 0,
+          upiPayments: 0,
+          bankTransfer: 0,
+          others: 0,
+          girviAmount: 0,
+          transactionCount: 0,
+        })
+      }
+      
+      const trend = trendsMap.get(date)!
+      trend.transactionCount++
+    })
+    
+    // Group girvi by date
+    girvi.forEach((g) => {
+      const date = g.date?.split("T")[0]
+      if (!date) return
+      
+      if (!trendsMap.has(date)) {
+        trendsMap.set(date, {
+          date,
+          totalPayments: 0,
+          totalRefunds: 0,
+          totalDues: 0,
+          cashPayments: 0,
+          cardPayments: 0,
+          upiPayments: 0,
+          bankTransfer: 0,
+          others: 0,
+          girviAmount: 0,
+          transactionCount: 0,
+        })
+      }
+      
+      const trend = trendsMap.get(date)!
+      trend.girviAmount += g.amount || 0
+      trend.transactionCount++
+    })
+    
+    // Convert to array and sort by date (newest first)
+    return Array.from(trendsMap.values())
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }
 
   const filteredTransactions = allTransactions.filter((t) => {
     const matchesSearch = t.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -634,54 +728,51 @@ export default function ReportsPage() {
                       <TableRow>
                         <TableCell colSpan={12} className="text-center py-8">Loading trends...</TableCell>
                       </TableRow>
+                    ) : dailyTrends().length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
+                          No data available for trends
+                        </TableCell>
+                      </TableRow>
                     ) : (
-                      <>
-                        {/* Today's Row */}
-                        <TableRow>
-                          <TableCell className="font-medium whitespace-nowrap">{formatDate(new Date().toISOString())}</TableCell>
+                      dailyTrends().map((trend) => (
+                        <TableRow key={trend.date}>
+                          <TableCell className="font-medium whitespace-nowrap">{formatDate(trend.date)}</TableCell>
                           <TableCell className="text-green-600 font-semibold whitespace-nowrap">
-                            {formatCurrency(todayTotalSales)}
+                            {formatCurrency(trend.totalPayments)}
                           </TableCell>
                           <TableCell className="text-red-600 font-semibold whitespace-nowrap">
-                            {formatCurrency(0)}
+                            {formatCurrency(trend.totalRefunds)}
                           </TableCell>
                           <TableCell className="text-blue-600 font-semibold whitespace-nowrap">
-                            {formatCurrency(todayTotalSales)}
+                            {formatCurrency(trend.totalPayments - trend.totalRefunds)}
                           </TableCell>
                           <TableCell className="text-amber-600 font-semibold whitespace-nowrap">
-                            {formatCurrency(todaySales.reduce((sum, s) => sum + (s.amount_pending || 0), 0))}
+                            {formatCurrency(trend.totalDues)}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {formatCurrency(todaySales.filter(s => s.payment_method?.toLowerCase() === 'cash').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                            {formatCurrency(trend.cashPayments)}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {formatCurrency(todaySales.filter(s => s.payment_method?.toLowerCase() === 'card').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                            {formatCurrency(trend.cardPayments)}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {formatCurrency(todaySales.filter(s => s.payment_method?.toLowerCase() === 'upi').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                            {formatCurrency(trend.upiPayments)}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {formatCurrency(todaySales.filter(s => s.payment_method?.toLowerCase() === 'bank_transfer').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                            {formatCurrency(trend.bankTransfer)}
                           </TableCell>
                           <TableCell className="whitespace-nowrap">
-                            {formatCurrency(todaySales.filter(s => !['cash', 'card', 'upi', 'bank_transfer'].includes(s.payment_method?.toLowerCase() || '')).reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
+                            {formatCurrency(trend.others)}
                           </TableCell>
                           <TableCell className="text-amber-600 font-semibold whitespace-nowrap">
-                            {formatCurrency(todayTotalGirvi)}
+                            {formatCurrency(trend.girviAmount)}
                           </TableCell>
                           <TableCell className="font-semibold whitespace-nowrap">
-                            {todaySales.length + todayPurchases.length + todayGirvi.length}
+                            {trend.transactionCount}
                           </TableCell>
                         </TableRow>
-                        {/* Additional historical rows can be added here */}
-                        {sales.length === 0 && purchases.length === 0 && girvi.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={12} className="text-center py-8 text-muted-foreground">
-                              No data available for trends
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </>
+                      ))
                     )}
                   </TableBody>
                 </Table>

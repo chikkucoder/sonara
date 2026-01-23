@@ -395,6 +395,18 @@ const PurchaseSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mon
         trim: true,
         uppercase: true
     },
+    supplier_type: {
+        type: String,
+        enum: {
+            values: [
+                "SUPPLIER",
+                "WHOLESALER",
+                "KARIGAR"
+            ],
+            message: "{VALUE} is not a valid supplier type"
+        },
+        uppercase: true
+    },
     item_name: {
         type: String,
         required: [
@@ -406,6 +418,17 @@ const PurchaseSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mon
             2,
             "Item name must be at least 2 characters"
         ]
+    },
+    item_type: {
+        type: String,
+        enum: {
+            values: [
+                "RAW",
+                "JEWELLERY"
+            ],
+            message: "{VALUE} is not a valid item type"
+        },
+        uppercase: true
     },
     category: {
         type: String,
@@ -1200,6 +1223,18 @@ const SupplierSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mon
             message: (props)=>`${props.value} is not a valid IFSC code!`
         }
     },
+    supplier_type: {
+        type: String,
+        enum: {
+            values: [
+                "SUPPLIER",
+                "WHOLESALER",
+                "KARIGAR"
+            ],
+            message: "{VALUE} is not a valid supplier type"
+        },
+        uppercase: true
+    },
     total_purchases: {
         type: Number,
         default: 0,
@@ -1302,6 +1337,7 @@ const SupplierSchema = new __TURBOPACK__imported__module__$5b$externals$5d2f$mon
         supplier.bank_name = supplierData.bank_name || supplier.bank_name;
         supplier.account_number = supplierData.account_number || supplier.account_number;
         supplier.ifsc_code = supplierData.ifsc_code || supplier.ifsc_code;
+        supplier.supplier_type = supplierData.supplier_type || supplier.supplier_type;
         await supplier.save();
     } else {
         // Create new supplier
@@ -1848,6 +1884,7 @@ async function POST(request) {
             name: body.supplier_name.trim(),
             phone: body.supplier_phone.replace(/\s/g, ""),
             gst_number: body.supplier_gst?.toUpperCase(),
+            supplier_type: body.supplier_type?.toUpperCase(),
             email: body.supplier_email,
             address: body.supplier_address,
             city: body.supplier_city,
@@ -1866,7 +1903,9 @@ async function POST(request) {
             supplier_name: supplier.name,
             supplier_phone: supplier.phone,
             supplier_gst: supplier.gst_number,
+            supplier_type: body.supplier_type?.toUpperCase(),
             item_name: body.item_name.trim(),
+            item_type: body.item_type?.toUpperCase(),
             category: body.category.trim(),
             quantity: body.quantity,
             weight: body.weight,
@@ -2003,6 +2042,7 @@ async function PUT(request) {
         const allowedUpdates = [
             "amount_paid",
             "payment_mode",
+            "payment_status",
             "payment_reference",
             "payment_date",
             "notes",
@@ -2018,6 +2058,24 @@ async function PUT(request) {
         // If payment date is provided, convert to Date
         if (sanitizedUpdate.payment_date) {
             sanitizedUpdate.payment_date = new Date(sanitizedUpdate.payment_date);
+        }
+        // Ensure payment_status is valid
+        if (sanitizedUpdate.payment_status) {
+            const validStatuses = [
+                "PAID",
+                "UNPAID",
+                "PARTIAL"
+            ];
+            const upperStatus = sanitizedUpdate.payment_status.toUpperCase();
+            if (!validStatuses.includes(upperStatus)) {
+                sanitizedUpdate.payment_status = "UNPAID";
+            } else {
+                sanitizedUpdate.payment_status = upperStatus;
+            }
+        }
+        // Ensure payment_mode is uppercase
+        if (sanitizedUpdate.payment_mode) {
+            sanitizedUpdate.payment_mode = sanitizedUpdate.payment_mode.toUpperCase();
         }
         const purchase = await __TURBOPACK__imported__module__$5b$project$5d2f$lib$2f$models$2f$Purchase$2e$ts__$5b$app$2d$route$5d$__$28$ecmascript$29$__["default"].findOneAndUpdate({
             _id: id,

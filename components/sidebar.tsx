@@ -15,6 +15,7 @@ import {
   FileText,
   ChevronLeft,
   ChevronRight,
+  HandCoins,
 } from "lucide-react"
 import { create } from "zustand"
 import { useState, useEffect } from "react"
@@ -35,6 +36,7 @@ const navigation = [
   { name: "Inventory", href: "/dashboard/inventory", icon: FileText },
   { name: "Sales", href: "/dashboard/sales", icon: ShoppingCart },
   { name: "Sales History", href: "/dashboard/sales-history", icon: FileText },
+  { name: "Girvi", href: "/dashboard/girvi", icon: HandCoins },
   { name: "Reports", href: "/dashboard/reports", icon: BarChart3 },
   { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ]

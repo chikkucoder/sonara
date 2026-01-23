@@ -26,8 +26,8 @@ import { useToast } from "@/hooks/use-toast"
 
 // Hidden sidebar for private zone
 const privateNavigation = [
-  { name: "Private Sale", href: "/dashboard/private-zone", icon: Gavel },
-  { name: "Private Sale Report", href: "/dashboard/private-zone/report", icon: FileBarChart },
+  { name: "Private Sale", href: "/settings/private-zone", icon: Gavel },
+  { name: "Private Sale Report", href: "/settings/private-zone/report", icon: FileBarChart },
 ]
 
 function PrivateSidebar() {

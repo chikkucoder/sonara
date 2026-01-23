@@ -34,9 +34,11 @@ export interface IPurchase extends mongoose.Document {
   supplier_name: string
   supplier_phone: string
   supplier_gst?: string
+  supplier_type?: "SUPPLIER" | "WHOLESALER" | "KARIGAR" // Supplier type
   
   // Product Information
   item_name: string
+  item_type?: "RAW" | "JEWELLERY" // Item type: raw material or jewellery
   category: string // e.g., "GOLD_JEWELLERY", "SILVER_COINS", "DIAMOND_RING"
   quantity: number // Number of pieces
   
@@ -117,11 +119,27 @@ const PurchaseSchema = new mongoose.Schema<IPurchase>(
       trim: true,
       uppercase: true,
     },
+    supplier_type: {
+      type: String,
+      enum: {
+        values: ["SUPPLIER", "WHOLESALER", "KARIGAR"],
+        message: "{VALUE} is not a valid supplier type",
+      },
+      uppercase: true,
+    },
     item_name: {
       type: String,
       required: [true, "Item name is required"],
       trim: true,
       minlength: [2, "Item name must be at least 2 characters"],
+    },
+    item_type: {
+      type: String,
+      enum: {
+        values: ["RAW", "JEWELLERY"],
+        message: "{VALUE} is not a valid item type",
+      },
+      uppercase: true,
     },
     category: {
       type: String,
