@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +18,7 @@ import {
   Calendar,
   FileDown,
   BarChart3,
+  Bell,
 } from "lucide-react"
 
 interface InventoryItem {
@@ -141,13 +141,39 @@ export default function InventoryPage() {
 
   return (
     <div className="p-8">
-      <DashboardHeader 
-        title="Inventory Stock" 
-        subtitle="View current inventory - Add items via Purchase section" 
-      />
+      {/* Header with Search and Actions */}
+      <div className="flex items-center justify-between pb-6">
+        <h1 className="font-serif text-2xl font-bold text-foreground">Inventory Stock</h1>
+        
+        <div className="flex items-center gap-4">
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => setIsInventoryReportOpen(true)}
+          >
+            <BarChart3 className="h-4 w-4" />
+            Inventory Report
+          </Button>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search items..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-64 pl-10"
+            />
+          </div>
+          <Button variant="outline" size="icon" className="relative bg-transparent">
+            <Bell className="h-4 w-4" />
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+              3
+            </span>
+          </Button>
+        </div>
+      </div>
 
       {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardContent className="p-4 flex items-center gap-4">
                 <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -195,44 +221,6 @@ export default function InventoryPage() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Filters and Actions */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-wrap items-center gap-4">
-                <Button
-                  variant="outline"
-                  className="gap-2"
-                  onClick={() => setIsInventoryReportOpen(true)}
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  Inventory Report
-                </Button>
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search items..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                  <SelectTrigger className="w-[180px]">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat} value={cat}>
-                        {cat}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Inventory Table - Added Date Column */}
           <Card>
@@ -290,15 +278,15 @@ export default function InventoryPage() {
 
       {/* Inventory Report Dialog */}
       <Dialog open={isInventoryReportOpen} onOpenChange={setIsInventoryReportOpen}>
-        <DialogContent className="max-w-[99vw] w-full max-h-[99vh] h-[99vh] flex flex-col overflow-hidden p-3">
-          <DialogHeader className="flex-shrink-0">
+        <DialogContent className="!max-w-none !w-screen !h-screen !top-0 !left-0 !translate-x-0 !translate-y-0 !m-0 !p-0 rounded-none border-0 flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
             <DialogTitle className="font-serif text-2xl flex items-center gap-2">
               <BarChart3 className="h-6 w-6" />
               Inventory Report - Detailed Analysis
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+          <div className="flex-1 overflow-y-auto space-y-6 px-6">
             {/* Filters */}
             <Card>
               <CardContent className="p-4">

@@ -385,33 +385,35 @@ export default function ReportsPage() {
         {/* Summary Tab */}
         <TabsContent value="summary" className="mt-6">
           {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <div className="space-y-2">
-                  <Label htmlFor="summary-start-date" className="text-sm font-medium">Start Date</Label>
+          <Card className="mb-4">
+            <CardContent className="p-3">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
+                <div className="space-y-1">
+                  <Label htmlFor="summary-start-date" className="text-xs font-medium">Start Date</Label>
                   <Input
                     id="summary-start-date"
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
                     placeholder="dd-mm-yyyy"
+                    className="h-8 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="summary-end-date" className="text-sm font-medium">End Date</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="summary-end-date" className="text-xs font-medium">End Date</Label>
                   <Input
                     id="summary-end-date"
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     placeholder="dd-mm-yyyy"
+                    className="h-8 text-sm"
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="summary-transaction-type" className="text-sm font-medium">Transaction Type</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="summary-transaction-type" className="text-xs font-medium">Transaction Type</Label>
                   <Select value={selectedTransactionType} onValueChange={setSelectedTransactionType}>
-                    <SelectTrigger id="summary-transaction-type">
+                    <SelectTrigger id="summary-transaction-type" className="h-8 text-sm">
                       <SelectValue placeholder="All Transactions" />
                     </SelectTrigger>
                     <SelectContent>
@@ -422,10 +424,10 @@ export default function ReportsPage() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label htmlFor="summary-payment-status" className="text-sm font-medium">Payment Status</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="summary-payment-status" className="text-xs font-medium">Payment Status</Label>
                   <Select value={selectedPaymentStatus} onValueChange={setSelectedPaymentStatus}>
-                    <SelectTrigger id="summary-payment-status">
+                    <SelectTrigger id="summary-payment-status" className="h-8 text-sm">
                       <SelectValue placeholder="All Payments" />
                     </SelectTrigger>
                     <SelectContent>
@@ -440,8 +442,8 @@ export default function ReportsPage() {
                 </div>
               </div>
               <div className="flex items-center justify-end">
-                <Button onClick={exportSummaryToCSV} className="gap-2">
-                  <Download className="h-4 w-4" />
+                <Button onClick={exportSummaryToCSV} size="sm" className="gap-1.5 h-8 text-sm">
+                  <Download className="h-3.5 w-3.5" />
                   Export CSV
                 </Button>
               </div>
@@ -449,90 +451,90 @@ export default function ReportsPage() {
           </Card>
 
           {/* Summary Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
             <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
-                  <IndianRupee className="h-5 w-5 text-green-600" />
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-green-100 flex items-center justify-center">
+                  <IndianRupee className="h-4 w-4 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Sales</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalSales)}</p>
-                  <p className="text-xs text-muted-foreground">{sales.length} transactions</p>
+                  <p className="text-xs text-muted-foreground">Total Sales</p>
+                  <p className="text-lg font-bold">{formatCurrency(totalSales)}</p>
+                  <p className="text-[10px] text-muted-foreground">{sales.length} transactions</p>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                  <ShoppingCart className="h-5 w-5 text-blue-600" />
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                  <ShoppingCart className="h-4 w-4 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Purchases</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalPurchases)}</p>
-                  <p className="text-xs text-muted-foreground">{purchases.length} orders</p>
+                  <p className="text-xs text-muted-foreground">Total Purchases</p>
+                  <p className="text-lg font-bold">{formatCurrency(totalPurchases)}</p>
+                  <p className="text-[10px] text-muted-foreground">{purchases.length} orders</p>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-lg bg-amber-100 flex items-center justify-center">
-                  <Package className="h-5 w-5 text-amber-600" />
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center">
+                  <Package className="h-4 w-4 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Girvi</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalGirvi)}</p>
-                  <p className="text-xs text-muted-foreground">{girvi.length} items</p>
+                  <p className="text-xs text-muted-foreground">Total Girvi</p>
+                  <p className="text-lg font-bold">{formatCurrency(totalGirvi)}</p>
+                  <p className="text-[10px] text-muted-foreground">{girvi.length} items</p>
                 </div>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-purple-600" />
+              <CardContent className="p-3 flex items-center gap-3">
+                <div className="h-8 w-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                  <TrendingUp className="h-4 w-4 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-muted-foreground">Net Revenue</p>
-                  <p className="text-2xl font-bold">{formatCurrency(totalRevenue - totalExpenses)}</p>
-                  <p className="text-xs text-muted-foreground">Profit</p>
+                  <p className="text-xs text-muted-foreground">Net Revenue</p>
+                  <p className="text-lg font-bold">{formatCurrency(totalRevenue - totalExpenses)}</p>
+                  <p className="text-[10px] text-muted-foreground">Profit</p>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Payment Methods Breakdown */}
-          <Card className="mb-6">
-            <CardContent className="p-6">
-              <h2 className="font-serif text-2xl font-bold mb-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 rounded-lg">
+          <Card className="mb-4">
+            <CardContent className="p-4">
+              <h2 className="font-serif text-lg font-bold mb-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white p-3 rounded-lg">
                 Payment Methods Breakdown
               </h2>
               
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 {/* Payments Received */}
-                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
-                  <h3 className="font-semibold text-lg mb-4 text-green-700">Payments Received</h3>
-                  <div className="space-y-3">
-                    <div className="bg-white rounded-lg p-4 flex items-center justify-between">
-                      <span className="font-medium text-gray-700">CASH</span>
-                      <span className="font-bold text-green-600 text-xl">
+                <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-base mb-3 text-green-700">Payments Received</h3>
+                  <div className="space-y-2">
+                    <div className="bg-white rounded-lg p-3 flex items-center justify-between">
+                      <span className="font-medium text-sm text-gray-700">CASH</span>
+                      <span className="font-bold text-green-600 text-base">
                         {formatCurrency(sales.filter(s => s.payment_method?.toLowerCase() === 'cash').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
                       </span>
                     </div>
-                    <div className="bg-white rounded-lg p-4 flex items-center justify-between">
-                      <span className="font-medium text-gray-700">UPI</span>
-                      <span className="font-bold text-green-600 text-xl">
+                    <div className="bg-white rounded-lg p-3 flex items-center justify-between">
+                      <span className="font-medium text-sm text-gray-700">UPI</span>
+                      <span className="font-bold text-green-600 text-base">
                         {formatCurrency(sales.filter(s => s.payment_method?.toLowerCase() === 'upi').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
                       </span>
                     </div>
-                    <div className="bg-white rounded-lg p-4 flex items-center justify-between">
-                      <span className="font-medium text-gray-700">CARD</span>
-                      <span className="font-bold text-green-600 text-xl">
+                    <div className="bg-white rounded-lg p-3 flex items-center justify-between">
+                      <span className="font-medium text-sm text-gray-700">CARD</span>
+                      <span className="font-bold text-green-600 text-base">
                         {formatCurrency(sales.filter(s => s.payment_method?.toLowerCase() === 'card').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
                       </span>
                     </div>
-                    <div className="bg-white rounded-lg p-4 flex items-center justify-between">
-                      <span className="font-medium text-gray-700">BANK TRANSFER</span>
-                      <span className="font-bold text-green-600 text-xl">
+                    <div className="bg-white rounded-lg p-3 flex items-center justify-between">
+                      <span className="font-medium text-sm text-gray-700">BANK TRANSFER</span>
+                      <span className="font-bold text-green-600 text-base">
                         {formatCurrency(sales.filter(s => s.payment_method?.toLowerCase() === 'bank_transfer').reduce((sum, s) => sum + (s.amount_paid || 0), 0))}
                       </span>
                     </div>
@@ -540,12 +542,12 @@ export default function ReportsPage() {
                 </div>
 
                 {/* Refunds Given */}
-                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-6">
-                  <h3 className="font-semibold text-lg mb-4 text-red-700">Refunds Given</h3>
-                  <div className="space-y-3">
-                    <div className="bg-white rounded-lg p-4 flex items-center justify-between">
-                      <span className="font-medium text-gray-700">CASH</span>
-                      <span className="font-bold text-red-600 text-xl">
+                <div className="bg-red-50 border-2 border-red-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-base mb-3 text-red-700">Refunds Given</h3>
+                  <div className="space-y-2">
+                    <div className="bg-white rounded-lg p-3 flex items-center justify-between">
+                      <span className="font-medium text-sm text-gray-700">CASH</span>
+                      <span className="font-bold text-red-600 text-base">
                         {formatCurrency(0)}
                       </span>
                     </div>

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { Card, CardContent } from "@/components/ui/card"
@@ -30,6 +29,9 @@ import {
   BarChart3,
   TrendingUp,
   Clock,
+  Bell,
+  CheckCircle,
+  XCircle,
 } from "lucide-react"
 
 interface PurchaseItem {
@@ -75,6 +77,7 @@ export default function PurchasePage() {
   const [selectedSupplier, setSelectedSupplier] = useState<string | null>(null)
   const [isSupplierDetailOpen, setIsSupplierDetailOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("purchases")
+  const [addedProducts, setAddedProducts] = useState<any[]>([])
   
   const [formData, setFormData] = useState({
     supplier_name: "",
@@ -102,6 +105,8 @@ export default function PurchasePage() {
     attachment: null as File | null,
     location: "",
     notes: "",
+    hsn_number: "",
+    gst_rate: "3",
   })
 
   const handleInputChange = (field: string, value: string) => {
@@ -218,103 +223,47 @@ export default function PurchasePage() {
       return
     }
 
-    try {
-      const subtotal = parseFloat(formData.total_value)
-      
-      const purchasePayload = {
-        supplier_name: formData.supplier_name,
-        supplier_phone: formData.supplier_phone,
-        supplier_address: formData.supplier_address,
-        supplier_gst: formData.supplier_gst,
-        supplier_type: formData.supplier_type,
-        item_name: formData.item_name,
-        item_type: formData.item_type,
-        category: formData.category,
-        weight: parseFloat(formData.gross_weight) || 0,
-        purity: formData.purity,
-        metal_type: formData.metal_type ? formData.metal_type.toUpperCase() : undefined,
-        quantity: parseFloat(formData.quantity) || 1,
-        rate_per_unit: parseFloat(formData.rate),
-        subtotal: subtotal,
-        gst_rate: 3,
-        gst_type: "INTRASTATE",
-        payment_mode: formData.payment_mode.toUpperCase(),
-        amount_paid: formData.payment_status === "paid" ? subtotal * 1.03 : 0, // Including GST
-        purchase_date: formData.purchase_date,
-        invoice_number: formData.invoice_no,
-        location: formData.location,
-        notes: formData.notes,
-      }
-
-      const response = await fetch("/api/purchase", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(purchasePayload),
-      })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        const errorDetails = data.details?.join("\n") || data.error || "Failed to add purchase"
-        toast({
-          title: "Purchase Error",
-          description: errorDetails,
-          variant: "destructive",
-        })
-        return
-      }
-
-      toast({
-        title: "Success",
-        description: data.message || "Purchase added and inventory updated successfully!",
-      })
-      
-      // Auto-save supplier info for adding more items
-      const currentSupplierInfo = {
-        supplier_name: formData.supplier_name,
-        supplier_phone: formData.supplier_phone,
-        supplier_address: formData.supplier_address,
-        supplier_gst: formData.supplier_gst,
-        supplier_type: formData.supplier_type,
-        invoice_no: formData.invoice_no,
-        purchase_date: formData.purchase_date,
-        payment_mode: formData.payment_mode,
-        payment_status: formData.payment_status,
-        location: formData.location,
-      }
-      
-      // Reset only item-related fields, keep supplier info
-      setFormData({
-        ...currentSupplierInfo,
-        item_name: "",
-        category: "",
-        item_type: "",
-        metal_type: "",
-        weight: "",
-        gross_weight: "",
-        net_weight: "",
-        purity: "",
-        quantity: "1",
-        rate: "",
-        total_value: "0",
-        due_amount: "",
-        due_date: "",
-        attachment: null,
-        notes: "",
-      })
-      
-      // Refresh purchases list
-      fetchPurchases()
-    } catch (error) {
-      console.error("Add purchase error:", error)
-      toast({
-        title: "Error",
-        description: "Failed to add purchase. Please try again.",
-        variant: "destructive",
-      })
+    // Add product to local state
+    const newProduct = {
+      id: Date.now(),
+      item_name: formData.item_name,
+      item_type: formData.item_type,
+      category: formData.category,
+      metal_type: formData.metal_type,
+      weight: formData.gross_weight,
+      net_weight: formData.net_weight,
+      purity: formData.purity,
+      quantity: formData.quantity,
+      rate: formData.rate,
+      total_value: formData.total_value,
+      hsn_number: formData.hsn_number,
+      gst_rate: formData.gst_rate,
     }
+
+    setAddedProducts(prev => [...prev, newProduct])
+    
+    toast({
+      title: "✓ Product Added",
+      description: `${formData.item_name} added to purchase list`,
+    })
+    
+    // Reset only product fields, keep supplier info
+    setFormData(prev => ({
+      ...prev,
+      item_name: "",
+      category: "",
+      item_type: "",
+      metal_type: "",
+      weight: "",
+      gross_weight: "",
+      net_weight: "",
+      purity: "",
+      quantity: "1",
+      rate: "",
+      total_value: "0",
+      hsn_number: "",
+      gst_rate: "3",
+    }))
   }
 
   const handleEditPurchase = async () => {
@@ -454,6 +403,118 @@ export default function PurchasePage() {
       attachment: null,
       location: "",
       notes: "",
+      hsn_number: "",
+      gst_rate: "3",
+    })
+    setAddedProducts([])
+  }
+
+  const handleSaveAllPurchases = async () => {
+    if (addedProducts.length === 0) {
+      toast({
+        title: "No Products",
+        description: "Please add at least one product",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      // Save all products to API
+      for (const product of addedProducts) {
+        const subtotal = parseFloat(product.total_value)
+        const gstRate = parseFloat(product.gst_rate) || 3
+        
+        const purchasePayload = {
+          supplier_name: formData.supplier_name,
+          supplier_phone: formData.supplier_phone,
+          supplier_address: formData.supplier_address,
+          supplier_gst: formData.supplier_gst,
+          supplier_type: formData.supplier_type,
+          item_name: product.item_name,
+          item_type: product.item_type,
+          category: product.category,
+          weight: parseFloat(product.weight) || 0,
+          purity: product.purity,
+          metal_type: product.metal_type ? product.metal_type.toUpperCase() : undefined,
+          quantity: parseFloat(product.quantity) || 1,
+          rate_per_unit: parseFloat(product.rate),
+          subtotal: subtotal,
+          gst_rate: gstRate,
+          gst_type: "INTRASTATE",
+          payment_mode: formData.payment_mode.toUpperCase(),
+          amount_paid: formData.payment_status === "paid" ? subtotal * (1 + gstRate / 100) : 0,
+          purchase_date: formData.purchase_date,
+          invoice_number: formData.invoice_no,
+          location: formData.location,
+          notes: formData.notes,
+          hsn_number: product.hsn_number,
+        }
+
+        const response = await fetch("/api/purchase", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(purchasePayload),
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          const errorDetails = data.details?.join("\\n") || data.error || "Failed to add purchase"
+          toast({
+            title: "Purchase Error",
+            description: `Failed to add ${product.item_name}: ${errorDetails}`,
+            variant: "destructive",
+          })
+          return
+        }
+      }
+
+      toast({
+        title: "✓ Success",
+        description: `${addedProducts.length} product(s) added successfully!`,
+      })
+      
+      // Clear added products but keep dialog open and supplier info
+      setAddedProducts([])
+      
+      // Reset only product fields, keep supplier and payment info for adding more
+      setFormData(prev => ({
+        ...prev,
+        item_name: "",
+        category: "",
+        item_type: "",
+        metal_type: "",
+        weight: "",
+        gross_weight: "",
+        net_weight: "",
+        purity: "",
+        quantity: "1",
+        rate: "",
+        total_value: "0",
+        hsn_number: "",
+        gst_rate: "3",
+      }))
+      
+      // Refresh purchases list to show new products
+      fetchPurchases()
+    } catch (error) {
+      console.error("Save purchases error:", error)
+      toast({
+        title: "Error",
+        description: "Failed to save purchases. Please try again.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const removeProductFromList = (productId: number) => {
+    setAddedProducts(prev => prev.filter(p => p.id !== productId))
+    toast({
+      title: "Product Removed",
+      description: "Product removed from purchase list",
     })
   }
 
@@ -498,49 +559,28 @@ export default function PurchasePage() {
 
   return (
     <div className="p-8">
-      <DashboardHeader
-        title="Purchase Management"
-        subtitle="Manage purchases and supplier relationships"
-      />
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="purchases" className="flex items-center gap-2">
-            <Package className="h-4 w-4" />
-            Purchases
-          </TabsTrigger>
-          <TabsTrigger value="suppliers" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
-            Supplier Report
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Purchases Tab */}
-        <TabsContent value="purchases" className="mt-6">
-      {/* Search and Filter Bar */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex-1 min-w-[200px]">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by item or supplier..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-              <DialogTrigger asChild>
-                <Button className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add Purchase
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      {/* Header with Tabs and Action Buttons */}
+      <div className="flex items-center justify-between pb-6">
+        <h1 className="font-serif text-2xl font-bold text-foreground">Purchase Management</h1>
+        
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by item or supplier..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-64 pl-10"
+            />
+          </div>
+          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="h-4 w-4" />
+                Add Purchase
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="font-serif text-2xl flex items-center gap-2">
                     <Package className="h-6 w-6" />
@@ -627,11 +667,20 @@ export default function PurchasePage() {
                   </div>
 
                   {/* Product Information */}
-                  <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
-                    <h3 className="font-semibold flex items-center gap-2 text-primary text-lg">
-                      <Package className="h-5 w-5" />
-                      Product Information
-                    </h3>
+                  <div className="space-y-4 p-6 border-2 border-primary/20 rounded-xl bg-gradient-to-br from-primary/5 to-muted/30 shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-semibold flex items-center gap-2 text-primary text-xl">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          <Package className="h-5 w-5" />
+                        </div>
+                        Product Information
+                      </h3>
+                      {formData.item_type && (
+                        <Badge className="bg-primary/10 text-primary hover:bg-primary/20 font-medium">
+                          {formData.item_type === "RAW" ? "Raw Material" : "Jewellery"}
+                        </Badge>
+                      )}
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {/* Item Type - First Field */}
                       <div className="space-y-2 md:col-span-2">
@@ -647,6 +696,43 @@ export default function PurchasePage() {
                             <SelectItem value="JEWELLERY">Jewellery</SelectItem>
                           </SelectContent>
                         </Select>
+                      </div>
+
+                      {/* HSN Number Field */}
+                      <div className="space-y-2">
+                        <Label htmlFor="hsn_number" className="flex items-center gap-1 font-medium">
+                          <FileText className="h-3.5 w-3.5 text-primary" />
+                          HSN Number <span className="text-red-500">*</span>
+                        </Label>
+                        <Input
+                          id="hsn_number"
+                          value={formData.hsn_number || ""}
+                          onChange={(e) => handleInputChange("hsn_number", e.target.value)}
+                          placeholder="e.g., 7113, 7114, 7116"
+                          className="border-2 border-primary/20 focus:border-primary"
+                        />
+                        <p className="text-xs text-muted-foreground">HSN code for gold/silver items</p>
+                      </div>
+
+                      {/* GST Rate - Auto calculated based on HSN */}
+                      <div className="space-y-2">
+                        <Label htmlFor="gst_rate" className="flex items-center gap-1 font-medium">
+                          <IndianRupee className="h-3.5 w-3.5 text-primary" />
+                          GST Rate (%)
+                        </Label>
+                        <div className="relative">
+                          <Input
+                            id="gst_rate"
+                            type="number"
+                            step="0.01"
+                            value={formData.gst_rate || "3"}
+                            onChange={(e) => handleInputChange("gst_rate", e.target.value)}
+                            placeholder="GST %"
+                            className="border-2 border-primary/20 focus:border-primary pr-12"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-muted-foreground">%</span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Standard GST for jewellery: 3%</p>
                       </div>
 
                       {/* Common Fields */}
@@ -850,18 +936,164 @@ export default function PurchasePage() {
                       {/* Total Value - Always Visible */}
                       {formData.item_type && (
                         <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="total_value">Total Value (₹)</Label>
-                          <Input
-                            id="total_value"
-                            type="number"
-                            value={formData.total_value}
-                            readOnly
-                            className="bg-muted font-semibold text-lg"
-                          />
+                          <Label htmlFor="total_value" className="font-medium text-base">Total Value (₹)</Label>
+                          <div className="relative">
+                            <IndianRupee className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-primary" />
+                            <Input
+                              id="total_value"
+                              type="number"
+                              value={formData.total_value}
+                              readOnly
+                              className="bg-primary/10 border-2 border-primary/30 font-bold text-xl pl-10 text-primary"
+                            />
+                          </div>
                         </div>
                       )}
                     </div>
+                    
+                    {/* Action Buttons in Product Information */}
+                    {formData.item_type && (
+                      <div className="space-y-3 mt-6 pt-6 border-t-2 border-dashed border-primary/20">
+                        <div className="flex items-center gap-3">
+                          <Button 
+                            type="button"
+                            onClick={handleAddPurchase} 
+                            className="flex-1 h-12 text-base font-semibold bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-md hover:shadow-lg transition-all"
+                          >
+                            <Plus className="h-5 w-5 mr-2" />
+                            Add Product to Purchase
+                          </Button>
+                        </div>
+                        <div className="relative">
+                          <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-dashed border-muted-foreground/30"></div>
+                          </div>
+                          <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-gradient-to-br from-primary/5 to-muted/30 px-3 py-1 text-muted-foreground rounded-full">or</span>
+                          </div>
+                        </div>
+                        <Button 
+                          type="button"
+                          variant="outline" 
+                          onClick={() => {
+                            // Reset only product fields, keep supplier info
+                            setFormData(prev => ({
+                              ...prev,
+                              item_name: "",
+                              category: "",
+                              item_type: "",
+                              metal_type: "",
+                              weight: "",
+                              gross_weight: "",
+                              net_weight: "",
+                              purity: "",
+                              quantity: "1",
+                              rate: "",
+                              total_value: "0",
+                              hsn_number: "",
+                              gst_rate: "3",
+                            }))
+                            toast({
+                              title: "✓ Ready for next product",
+                              description: "Supplier details retained. Add another product.",
+                            })
+                          }}
+                          className="w-full h-11 border-2 border-primary/30 hover:bg-primary/5 hover:border-primary text-base font-medium"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Another Product from Same Supplier
+                        </Button>
+                        <p className="text-xs text-center text-muted-foreground mt-2">
+                          💡 Tip: Add multiple products before closing the dialog
+                        </p>
+                      </div>
+                    )}
                   </div>
+
+                  {/* Added Products List */}
+                  {addedProducts.length > 0 && (
+                    <div className="space-y-4 p-6 border-2 border-green-500/30 rounded-xl bg-green-50/50">
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-semibold flex items-center gap-2 text-green-700 text-xl">
+                          <div className="p-2 rounded-lg bg-green-500/10">
+                            <CheckCircle className="h-5 w-5" />
+                          </div>
+                          Added Products ({addedProducts.length})
+                        </h3>
+                        <Badge className="bg-green-600 text-white hover:bg-green-700">
+                          Total: ₹{addedProducts.reduce((sum, p) => sum + parseFloat(p.total_value), 0).toFixed(2)}
+                        </Badge>
+                      </div>
+                      <div className="overflow-x-auto rounded-lg border border-green-200">
+                        <Table>
+                          <TableHeader>
+                            <TableRow className="bg-green-100/50">
+                              <TableHead className="font-semibold">#</TableHead>
+                              <TableHead className="font-semibold">Item Name</TableHead>
+                              <TableHead className="font-semibold">Type</TableHead>
+                              <TableHead className="font-semibold">HSN</TableHead>
+                              <TableHead className="font-semibold">Qty/Weight</TableHead>
+                              <TableHead className="font-semibold">Rate</TableHead>
+                              <TableHead className="font-semibold">GST %</TableHead>
+                              <TableHead className="font-semibold">Value</TableHead>
+                              <TableHead className="font-semibold">Action</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {addedProducts.map((product, index) => (
+                              <TableRow key={product.id} className="hover:bg-green-50">
+                                <TableCell className="font-medium">{index + 1}</TableCell>
+                                <TableCell>
+                                  <div className="font-medium">{product.item_name}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {product.category || product.metal_type}
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  <Badge variant={product.item_type === "RAW" ? "secondary" : "default"}>
+                                    {product.item_type}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-sm">{product.hsn_number || "-"}</TableCell>
+                                <TableCell>
+                                  {product.item_type === "RAW" 
+                                    ? `${product.weight}g` 
+                                    : `${product.quantity} pcs`}
+                                </TableCell>
+                                <TableCell className="font-medium">₹{parseFloat(product.rate).toFixed(2)}</TableCell>
+                                <TableCell>{product.gst_rate}%</TableCell>
+                                <TableCell className="font-bold text-green-700">₹{parseFloat(product.total_value).toFixed(2)}</TableCell>
+                                <TableCell>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeProductFromList(product.id)}
+                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <div className="flex items-center justify-between pt-4 border-t border-green-200">
+                        <div className="text-sm text-muted-foreground">
+                          {addedProducts.length} product(s) ready to save
+                        </div>
+                        <Button
+                          type="button"
+                          onClick={handleSaveAllPurchases}
+                          className="bg-green-600 hover:bg-green-700 text-white font-semibold h-11 px-6"
+                        >
+                          <CheckCircle className="h-5 w-5 mr-2" />
+                          Save All {addedProducts.length} Product(s)
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Payment & Other Details */}
                   <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
@@ -979,28 +1211,58 @@ export default function PurchasePage() {
                 <DialogFooter className="mt-6">
                   <div className="flex items-center justify-between w-full">
                     <div className="text-sm text-muted-foreground">
-                      💡 Item will be added and form will reset for next item
+                      {addedProducts.length > 0 
+                        ? `${addedProducts.length} product(s) added • Total: ₹${addedProducts.reduce((sum, p) => sum + parseFloat(p.total_value), 0).toFixed(2)}`
+                        : "Add products to create purchase entry"}
                     </div>
                     <div className="flex gap-2">
                       <Button variant="outline" onClick={() => {
                         setIsAddDialogOpen(false)
                         resetForm()
                       }}>
-                        Done & Close
+                        {addedProducts.length > 0 ? "Cancel" : "Close"}
                       </Button>
-                      <Button onClick={handleAddPurchase}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Item
-                      </Button>
+                      {addedProducts.length > 0 && (
+                        <Button
+                          onClick={handleSaveAllPurchases}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Save All {addedProducts.length} Product(s)
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+            <Button variant="outline" size="icon" className="relative bg-transparent">
+              <Bell className="h-4 w-4" />
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                3
+              </span>
+            </Button>
+          </div>
+        </div>
 
-            {/* Edit Purchase Dialog */}
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-              <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="purchases" className="flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Purchases
+          </TabsTrigger>
+          <TabsTrigger value="suppliers" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Supplier Report
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Purchases Tab */}
+        <TabsContent value="purchases" className="mt-6">
+          {/* Edit Purchase Dialog */}
+          <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle className="font-serif text-2xl flex items-center gap-2">
                     <Edit className="h-6 w-6" />
@@ -1145,14 +1407,11 @@ export default function PurchasePage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Purchases Table */}
-      <Card>
-        <CardContent className="p-0">
-          <Table>
+            {/* Purchases Table */}
+            <Card>
+              <CardContent className="p-0">
+                <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead>Purchase Date</TableHead>
@@ -1308,15 +1567,15 @@ export default function PurchasePage() {
 
       {/* Supplier Detail Dialog */}
       <Dialog open={isSupplierDetailOpen} onOpenChange={setIsSupplierDetailOpen}>
-        <DialogContent className="max-w-[98vw] w-full max-h-[98vh] h-[98vh] flex flex-col overflow-hidden">
-          <DialogHeader className="flex-shrink-0">
+        <DialogContent className="!max-w-none !w-screen !h-screen !top-0 !left-0 !translate-x-0 !translate-y-0 !m-0 !p-0 rounded-none border-0 flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
             <DialogTitle className="font-serif text-2xl flex items-center gap-2">
               <User className="h-6 w-6" />
               Supplier Purchase History - {selectedSupplier}
             </DialogTitle>
           </DialogHeader>
           
-          <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+          <div className="flex-1 overflow-y-auto space-y-4 px-6">
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
@@ -1414,7 +1673,7 @@ export default function PurchasePage() {
             </Card>
           </div>
 
-          <DialogFooter className="flex-shrink-0 mt-4">
+          <DialogFooter className="flex-shrink-0 px-6 pb-6 pt-4">
             <Button variant="outline" onClick={() => setIsSupplierDetailOpen(false)}>
               Close
             </Button>

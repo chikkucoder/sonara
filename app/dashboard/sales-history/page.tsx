@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,6 +20,7 @@ import {
   Banknote,
   Receipt,
   Printer,
+  Bell,
 } from "lucide-react"
 
 interface Sale {
@@ -144,18 +144,54 @@ export default function SalesHistoryPage() {
 
   return (
     <div className="p-6">
-      <DashboardHeader title="Sales History" subtitle="View all past B2C and B2B sales transactions" />
+      {/* Header with Tabs and Search/Filters */}
+      <div className="flex items-center justify-between pb-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="b2c" className="flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4" />
+              B2C (Retail)
+            </TabsTrigger>
+            <TabsTrigger value="b2b" className="flex items-center gap-2">
+              <Receipt className="h-4 w-4" />
+              B2B (Wholesale)
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+        
+        <div className="flex items-center gap-4">
+          <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+            <SelectTrigger className="w-[150px]">
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="pending">Pending</SelectItem>
+            </SelectContent>
+          </Select>
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by customer or invoice..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-64 pl-10"
+            />
+          </div>
+          <Button variant="outline" size="icon" className="relative bg-transparent">
+            <Bell className="h-4 w-4" />
+            <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+              3
+            </span>
+          </Button>
+        </div>
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="b2c" className="flex items-center gap-2">
-            <ShoppingCart className="h-4 w-4" />
-            B2C (Retail)
-          </TabsTrigger>
-          <TabsTrigger value="b2b" className="flex items-center gap-2">
-            <Receipt className="h-4 w-4" />
-            B2B (Wholesale)
-          </TabsTrigger>
+        <TabsList className="hidden">
+          <TabsTrigger value="b2c">B2C</TabsTrigger>
+          <TabsTrigger value="b2b">B2B</TabsTrigger>
         </TabsList>
 
         {/* B2C Tab Content */}
@@ -207,33 +243,6 @@ export default function SalesHistoryPage() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by customer or invoice..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Table */}
           <Card>
@@ -394,34 +403,6 @@ export default function SalesHistoryPage() {
               </CardContent>
             </Card>
           </div>
-
-          {/* Filters */}
-          <Card className="mb-6">
-            <CardContent className="p-4">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="relative flex-1 min-w-[200px]">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by business name or invoice..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9"
-                  />
-                </div>
-                <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                  <SelectTrigger className="w-[150px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="paid">Paid</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="overdue">Overdue</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
 
           {/* Table */}
           <Card>

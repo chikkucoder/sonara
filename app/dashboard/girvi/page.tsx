@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,6 +25,7 @@ import {
   TrendingUp,
   CheckCircle,
   XCircle,
+  Bell,
 } from "lucide-react"
 
 interface GirviItem {
@@ -310,122 +310,32 @@ export default function GirviPage() {
 
   return (
     <div className="p-8">
-      <DashboardHeader 
-        title="Girvi Management" 
-        subtitle="Manage pledged items and loan tracking" 
-      />
-
-      {/* Girvi Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-              <HandCoins className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Girvi Items</p>
-              <p className="text-2xl font-bold">{girviItems.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center">
-              <AlertCircle className="h-5 w-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Active Loans</p>
-              <p className="text-2xl font-bold">{activeGirvi.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
-              <Gavel className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Auctioned Items</p>
-              <p className="text-2xl font-bold">{auctionedGirvi.length}</p>
-            </div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center gap-4">
-            <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
-              <Percent className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Loan Amount</p>
-              <p className="text-xl font-bold">{formatCurrency(totalLoanAmount)}</p>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Girvi Filters */}
-      <Card className="mb-6">
-        <CardContent className="p-4">
-          <div className="flex flex-wrap items-center gap-4">
-            <Button
-              variant="outline"
-              onClick={() => setIsReportOpen(true)}
-              className="gap-2"
-            >
-              <BarChart3 className="h-4 w-4" />
-              Girvi Report
-            </Button>
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by customer or item..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {girviCategories.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Dialog open={isAddGirviOpen} onOpenChange={setIsAddGirviOpen}>
-              <DialogTrigger asChild>
-                <Button className="bg-primary text-primary-foreground">
-                  <Plus className="h-4 w-4 mr-2" />
-                  New Girvi
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="font-serif">Add New Girvi Entry</DialogTitle>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  {/* Customer Details */}
-                  <div className="space-y-3">
-                    <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
-                      Customer Details
-                    </h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label>Customer Name</Label>
-                        <Input
-                          value={newGirvi.customerName}
-                          onChange={(e) => setNewGirvi({ ...newGirvi, customerName: e.target.value })}
-                          placeholder="Full Name"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Phone Number</Label>
-                        <Input
+      {/* Header with Controls */}
+      <div className="flex items-center justify-between pb-6">
+        <h1 className="font-serif text-2xl font-bold text-foreground">Girvi Management</h1>
+        
+        <div className="flex items-center gap-4">
+          <Dialog open={isAddGirviOpen} onOpenChange={setIsAddGirviOpen}>
+            <DialogTrigger asChild>
+              <Button className="bg-primary text-primary-foreground">
+                <Plus className="h-4 w-4 mr-2" />
+                New Girvi
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="font-serif">Add New Girvi Entry</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                {/* Customer Details */}
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                    Customer Details
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label>Customer Name</Label>
+                      <Input
                           value={newGirvi.customerPhone}
                           onChange={(e) => setNewGirvi({ ...newGirvi, customerPhone: e.target.value })}
                           placeholder="9876543210"
@@ -532,14 +442,23 @@ export default function GirviPage() {
                       </div>
                     </div>
                     <div className="grid gap-2">
-                      <Label>Description</Label>
+                      <Label>Description {newGirvi.itemType === "Other" && <span className="text-red-500">*</span>}</Label>
                       <Textarea
                         value={newGirvi.description}
                         onChange={(e) => setNewGirvi({ ...newGirvi, description: e.target.value })}
-                        placeholder="Detailed description of the item"
+                        placeholder={newGirvi.itemType === "Other" ? "Please describe the item in detail" : "Detailed description of the item"}
                         rows={2}
                       />
                     </div>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="w-full gap-2"
+                      onClick={() => alert('Multiple items feature coming soon!')}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add More Item
+                    </Button>
                   </div>
 
                   {/* Loan Details */}
@@ -596,9 +515,92 @@ export default function GirviPage() {
                 </div>
               </DialogContent>
             </Dialog>
+            <Button
+              variant="outline"
+              onClick={() => setIsReportOpen(true)}
+              className="gap-2"
+            >
+              <BarChart3 className="h-4 w-4" />
+              Girvi Report
+            </Button>
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[180px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                {girviCategories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by customer or item..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-64 pl-10"
+              />
+            </div>
+            <Button variant="outline" size="icon" className="relative bg-transparent">
+              <Bell className="h-4 w-4" />
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[10px] font-bold text-primary-foreground flex items-center justify-center">
+                3
+              </span>
+            </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+
+      {/* Girvi Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+              <HandCoins className="h-5 w-5 text-primary" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Girvi Items</p>
+              <p className="text-2xl font-bold">{girviItems.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="h-10 w-10 rounded-lg bg-orange-100 flex items-center justify-center">
+              <AlertCircle className="h-5 w-5 text-orange-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Active Loans</p>
+              <p className="text-2xl font-bold">{activeGirvi.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="h-10 w-10 rounded-lg bg-purple-100 flex items-center justify-center">
+              <Gavel className="h-5 w-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Auctioned Items</p>
+              <p className="text-2xl font-bold">{auctionedGirvi.length}</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4 flex items-center gap-4">
+            <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center">
+              <Percent className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Loan Amount</p>
+              <p className="text-xl font-bold">{formatCurrency(totalLoanAmount)}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Girvi Table */}
       <Card>
@@ -687,15 +689,15 @@ export default function GirviPage() {
 
       {/* Girvi Report Dialog */}
       <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
-        <DialogContent className="max-w-[99vw] w-full max-h-[99vh] h-[99vh] flex flex-col overflow-hidden p-3">
-          <DialogHeader className="flex-shrink-0">
+        <DialogContent className="!max-w-none !w-screen !h-screen !top-0 !left-0 !translate-x-0 !translate-y-0 !m-0 !p-0 rounded-none border-0 flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0 px-6 pt-6 pb-4 border-b">
             <DialogTitle className="font-serif text-2xl flex items-center gap-2">
               <BarChart3 className="h-6 w-6" />
               Girvi Report - Detailed Analysis
             </DialogTitle>
           </DialogHeader>
 
-          <div className="flex-1 overflow-y-auto space-y-6 pr-2">
+          <div className="flex-1 overflow-y-auto space-y-6 px-6">
             {/* Filters */}
             <Card>
               <CardContent className="p-4">
